@@ -25,6 +25,7 @@ from .views import landing_page
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='home'),
+    path('campaign/', include('apps.campaigns.urls')),
     # path('dashboard/', include('apps.campaigns.urls')), # Later
     # path('accounts/', include('apps.accounts.urls')), # Later
 ]

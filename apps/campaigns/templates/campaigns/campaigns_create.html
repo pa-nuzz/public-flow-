@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section>
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <!-- Page Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                Create New Campaign
+            </h2>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <button type="button" class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Save Draft
+            </button>
+        </div>
+    </div>
+
+    <form method="POST" action="." class="space-y-8 divide-y divide-gray-200">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-y-6 gap-x-8 sm:grid-cols-6">
+            
+            <!-- SECTION 1: Campaign Metadata -->
+            <div class="sm:col-span-4">
+                <label for="campaign_name" class="block text-sm font-medium leading-6 text-gray-900">Internal Campaign Name</label>
+                <div class="mt-2">
+                    <input type="text" name="campaign_name" id="campaign_name" placeholder="e.g. October Newsletter - Week 1" 
+                           class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+
+            <!-- SECTION 2: Sender & Audience Selection -->
+            <div class="sm:col-span-3">
+                <label for="sender" class="block text-sm font-medium leading-6 text-gray-900">From Identity (Sender)</label>
+                <div class="mt-2">
+                    <select id="sender" name="sender" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option value="" disabled selected>Select a business email...</option>
+                        {% for sender in senders %}
+                            <option value="{{ sender.id }}">{{ sender.email_address }}</option>
+                        {% empty %}
+                            <option disabled>No senders added yet</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="sm:col-span-3">
+                <label for="subscriber_list" class="block text-sm font-medium leading-6 text-gray-900">To (Contact List)</label>
+                <div class="mt-2">
+                    <select id="subscriber_list" name="subscriber_list" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <option value="" disabled selected>Select an audience...</option>
+                        {% for list in lists %}
+                            <option value="{{ list.id }}">{{ list.name }} ({{ list.subscribers.count }} contacts)</option>
+                        {% empty %}
+                            <option disabled>No lists created yet</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- SECTION 3: The Content & AI Check -->
+            <div class="sm:col-span-6 mt-6">
+                <!-- AI Spam Warning Box (Initially Hidden) -->
+                <div id="spam-score-card" class="hidden rounded-md bg-blue-50 p-4 mb-4 border border-blue-200">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <!-- Heroicon: Information Circle -->
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1 md:flex md:justify-between">
+                            <p class="text-sm text-blue-700 font-medium">AI Analysis: <span id="score-text">Calculating...</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <label for="subject" class="block text-sm font-medium leading-6 text-gray-900">Email Subject Line</label>
+                <div class="mt-2 flex gap-2">
+                    <input type="text" name="subject" id="subject" placeholder="Enter a catchy subject..." 
+                           class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    
+                    <!-- THE AI BUTTON -->
+                    <button type="button" onclick="checkSpamScore()"
+                        class="inline-flex items-center rounded-md bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-200 hover:bg-indigo-100">
+                        Check Spam Score
+                    </button>
+                </div>
+            </div>
+
+            <!-- RICH TEXT EDITOR (CKEditor) -->
+            <div class="sm:col-span-6">
+                <label for="editor" class="block text-sm font-medium leading-6 text-gray-900">Email Body</label>
+                <div class="mt-2">
+                    <textarea name="body_content" id="editor"></textarea>
+                </div>
+                <p class="mt-2 text-sm text-gray-500">
+                    Use variables like <code>{name}</code> to personalize your email.
+                </p>
+            </div>
+        </div>
+
+        <!-- FORM ACTIONS -->
+        <div class="pt-5">
+            <div class="flex justify-end gap-x-3">
+                <a href="#" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</a>
+                <button type="submit" class="inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Send Campaign</button>
+            </div>
+        </div>
+    </form>
+</div>
+</section>
+<!-- SCRIPTS for Dev B -->
+<script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
+
+<script>
+    let editorInstance;
+
+    // 1. Initialize CKEditor on the textarea
+    ClassicEditor
+        .create(document.querySelector('#editor'), {
+            toolbar: [ 'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote' ],
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+                ]
+            }
+        })
+        .then(editor => {
+            editorInstance = editor;
+            console.log('Editor was initialized', editor);
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    // 2. Dummy function for Dev C to hook into later
+    function checkSpamScore() {
+        const subject = document.getElementById('subject').value;
+        const body = editorInstance.getData(); // Get data from CKEditor
+
+        if(!subject) {
+            alert("Please enter a subject line first.");
+            return;
+        }
+
+        // Simulating Dev C's AI Response (Mockup)
+        const scoreCard = document.getElementById('spam-score-card');
+        const scoreText = document.getElementById('score-text');
+        
+        scoreCard.classList.remove('hidden');
+        
+        // This will eventually be an AJAX/Fetch call to the backend
+        scoreText.innerText = "Analyizing...";
+        
+        setTimeout(() => {
+            scoreText.innerHTML = "85/100 (Safe). Tip: Good subject length.";
+            scoreCard.classList.remove('bg-blue-50', 'border-blue-200');
+            scoreCard.classList.add('bg-green-50', 'border-green-200');
+        }, 1000);
+    }
+</script>
+
+<style>
+    /* Formatting required for CKEditor inside Tailwind */
+    .ck-editor__editable_inline {
+        min-height: 400px;
+    }
+</style>
+{% endblock %}

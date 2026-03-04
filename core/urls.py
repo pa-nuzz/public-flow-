@@ -6,15 +6,10 @@ from core.views import landing_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # Landing
-    path('', landing_view, name="landing"),
-
-    # Accounts
-    path('accounts/', include('apps.accounts.urls')),
-
-    # Dashboard related
-    path('', include('apps.accounts.dashboard_urls')),  # we will create this
+    path('', landing_page, name='home'),
+    path('campaign/', include('apps.campaigns.urls')),
+    # path('dashboard/', include('apps.campaigns.urls')), # Later
+    # path('accounts/', include('apps.accounts.urls')), # Later
 ]
 
 if settings.DEBUG:

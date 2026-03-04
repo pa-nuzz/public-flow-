@@ -40,18 +40,17 @@
         <div class="auth-err">{{ form.non_field_errors.0 }}</div>
       {% endif %}
 
-      <form method="post">
-        {% csrf_token %}
-        <label class="auth-label" for="id_email">Email address</label>
-        <input class="auth-input" type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}" placeholder="you@company.com" autocomplete="email" required>
-        {% if form.email.errors %}<div class="auth-err" style="margin-top:-10px;margin-bottom:12px">{{ form.email.errors.0 }}</div>{% endif %}
+    <form method="POST" class="space-y-4">
+    {% csrf_token %}
 
-        <label class="auth-label" for="id_password">Password</label>
-        <input class="auth-input" type="password" name="password" id="id_password" placeholder="Enter your password" autocomplete="current-password" required>
-        {% if form.password.errors %}<div class="auth-err" style="margin-top:-10px;margin-bottom:12px">{{ form.password.errors.0 }}</div>{% endif %}
+    {{ form.username }}
+    {{ form.password }}
 
-        <button type="submit" class="auth-btn">Sign in →</button>
-      </form>
+     <button type="submit"
+        class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+        Login
+     </button>
+    </form>
 
       <p class="auth-foot">Don't have an account? <a href="{% url 'register' %}">Create one free</a></p>
     </div>

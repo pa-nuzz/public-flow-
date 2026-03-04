@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Sign In — MailFlow AI{% endblock %}
+{% block extra_head %}
+<style>
+  body { background: #F8FAFC; }
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 80px 16px 40px; }
+  .auth-box { width: 100%; max-width: 400px; }
+  .auth-logo { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 28px; }
+  .auth-logo-mark { width: 32px; height: 32px; background: #4F46E5; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 14px; }
+  .auth-logo-text { font-weight: 900; font-size: 1.1rem; letter-spacing: -.03em; color: #0F172A; }
+  .auth-logo-text span { color: #4F46E5; }
+  .auth-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .auth-heading { font-size: 1.375rem; font-weight: 800; color: #0F172A; text-align: center; margin-bottom: 4px; letter-spacing: -.03em; }
+  .auth-sub { font-size: .875rem; color: #64748B; text-align: center; margin-bottom: 28px; }
+  .auth-label { display: block; font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: 6px; letter-spacing: -.01em; }
+  .auth-input { display: block; width: 100%; padding: 10px 13px; border: 1.5px solid #E2E8F0; border-radius: 8px; font-size: .9375rem; font-family: 'Inter', sans-serif; color: #0F172A; background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; margin-bottom: 14px; }
+  .auth-input:focus { border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+  .auth-input::placeholder { color: #94A3B8; }
+  .auth-btn { display: block; width: 100%; padding: 11px; background: #4F46E5; color: #fff; border: none; border-radius: 8px; font-size: .9375rem; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; transition: background .15s, transform .1s; letter-spacing: -.01em; margin-top: 6px; }
+  .auth-btn:hover { background: #3730A3; transform: translateY(-1px); }
+  .auth-err { font-size: .8125rem; color: #DC2626; padding: 10px 12px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 7px; margin-bottom: 16px; font-weight: 500; }
+  .auth-foot { text-align: center; margin-top: 20px; font-size: .875rem; color: #64748B; }
+  .auth-foot a { color: #4F46E5; font-weight: 600; }
+  .auth-foot a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">M</div>
+      <span class="auth-logo-text">MailFlow<span>AI</span></span>
+    </div>
+
+    <div class="auth-card">
+      <h1 class="auth-heading">Welcome back</h1>
+      <p class="auth-sub">Sign in to your account to continue</p>
+
+      {% if form.non_field_errors %}
+        <div class="auth-err">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+    <form method="POST" class="space-y-4">
+    {% csrf_token %}
+
+    {{ form.username }}
+    {{ form.password }}
+
+     <button type="submit"
+        class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+        Login
+     </button>
+    </form>
+
+      <p class="auth-foot">Don't have an account? <a href="{% url 'register' %}">Create one free</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

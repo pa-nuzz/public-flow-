@@ -1,0 +1,101 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Dashboard — MailFlow AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+{% if not senders_count %}
+<div class="notice notice-warn" style="margin-bottom:18px">
+  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+  <div style="flex:1">
+    <strong>No senders connected yet.</strong> Add a Gmail or SMTP sender in Settings to start sending campaigns.
+  </div>
+  <a href="{% url 'settings_view' %}" class="btn btn-sm" style="background:#fff;color:#92400E;border:1px solid #FDE68A;flex-shrink:0">Go to Settings →</a>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#EEF2FF">
+      <svg width="18" height="18" fill="none" stroke="#4F46E5" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    </div>
+    <div class="stat-value">{{ campaigns_count }}</div>
+    <div class="stat-label">Campaigns</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#ECFDF5">
+      <svg width="18" height="18" fill="none" stroke="#10B981" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+    </div>
+    <div class="stat-value">{{ sent_count }}</div>
+    <div class="stat-label">Emails Sent</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#F0FDF4">
+      <svg width="18" height="18" fill="none" stroke="#16A34A" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </div>
+    <div class="stat-value">{{ senders_count }}</div>
+    <div class="stat-label">Senders Connected</div>
+  </div>
+</div>
+
+<!-- Recent Campaigns -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Recent Campaigns</div>
+      <div class="card-subtitle">Your last {{ recent_campaigns|length }} campaigns</div>
+    </div>
+    <a href="{% url 'campaign_list' %}" class="btn btn-secondary btn-sm">View all</a>
+  </div>
+
+  {% if recent_campaigns %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Campaign</th>
+            <th>Status</th>
+            <th>Recipients</th>
+            <th>Sent</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in recent_campaigns %}
+          <tr>
+            <td>
+              <div style="font-weight:600;color:var(--gray-900)">{{ c.name }}</div>
+              <div style="font-size:.75rem;color:var(--gray-400);margin-top:1px">{{ c.subject|truncatechars:52 }}</div>
+            </td>
+            <td>
+              {% if c.status == 'completed' %}<span class="badge badge-green">● Completed</span>
+              {% elif c.status == 'running' %}<span class="badge badge-blue">● Running</span>
+              {% elif c.status == 'draft' %}<span class="badge badge-gray">Draft</span>
+              {% elif c.status == 'paused' %}<span class="badge badge-yellow">Paused</span>
+              {% else %}<span class="badge badge-gray">{{ c.status }}</span>{% endif %}
+            </td>
+            <td style="color:var(--gray-600)">{{ c.total_recipients }}</td>
+            <td style="font-weight:600;color:var(--green)">{{ c.sent_count }}</td>
+            <td style="color:var(--gray-400);font-size:.8125rem">{{ c.created_at|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'campaign_detail' c.pk %}" class="btn btn-ghost btn-sm" style="color:var(--indigo)">View →</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <h3>No campaigns yet</h3>
+      <p>Create your first campaign and let AI check it before you send.</p>
+      <a href="{% url 'campaign_compose' %}" class="btn btn-primary btn-sm" style="margin-top:14px">+ Create Campaign</a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

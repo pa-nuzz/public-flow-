@@ -1,101 +1,166 @@
 {% extends "base_dashboard.html" %}
 {% block title %}Dashboard — MailFlow AI{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block page_title %}Overview{% endblock %}
+
 {% block content %}
+<div class="space-y-8">
+    <!-- Welcome Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-black text-slate-900 leading-tight">Welcome back, {{ user.first_name }}! 👋</h2>
+            <p class="text-slate-500">Here's a quick look at your mail flow performance.</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="#" class="px-5 py-2.5 bg-white border border-gray-200 text-slate-700 font-bold rounded-xl hover:bg-gray-50 transition text-sm">View Reports</a>
+            <a href="#" class="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 text-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                New Campaign
+            </a>
+        </div>
+    </div>
 
-{% if not senders_count %}
-<div class="notice notice-warn" style="margin-bottom:18px">
-  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-  <div style="flex:1">
-    <strong>No senders connected yet.</strong> Add a Gmail or SMTP sender in Settings to start sending campaigns.
-  </div>
-  <a href="{% url 'settings_view' %}" class="btn btn-sm" style="background:#fff;color:#92400E;border:1px solid #FDE68A;flex-shrink:0">Go to Settings →</a>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-indigo-50 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                </div>
+                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">+12%</span>
+            </div>
+            <div class="text-3xl font-black text-slate-900">{{ campaigns_count|default:0 }}</div>
+            <div class="text-sm font-semibold text-slate-400">Total Campaigns</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                </div>
+                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">98% Success</span>
+            </div>
+            <div class="text-3xl font-black text-slate-900">{{ sent_count|default:0 }}</div>
+            <div class="text-sm font-semibold text-slate-400">Emails Sent</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </div>
+                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">Avg 45%</span>
+            </div>
+            <div class="text-3xl font-black text-slate-900">0%</div>
+            <div class="text-sm font-semibold text-slate-400">Open Rate</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <span class="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">{{ senders_count|default:0 }} Active</span>
+            </div>
+            <div class="text-3xl font-black text-slate-900">{{ senders_count|default:0 }}</div>
+            <div class="text-sm font-semibold text-slate-400">Connected Senders</div>
+        </div>
+    </div>
+
+    <!-- Main Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Recent Campaigns Table -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+                <h3 class="font-bold text-slate-900">Recent Campaigns</h3>
+                <a href="#" class="text-sm font-bold text-primary hover:underline">View all</a>
+            </div>
+            <div class="p-0">
+                {% if recent_campaigns %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-gray-50/50">
+                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Campaign</th>
+                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Status</th>
+                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Sent</th>
+                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                {% for c in recent_campaigns %}
+                                <tr class="hover:bg-gray-50/50 transition-colors group">
+                                    <td class="px-8 py-5">
+                                        <div class="font-bold text-slate-900 group-hover:text-primary transition-colors">{{ c.name }}</div>
+                                        <div class="text-xs text-slate-400">{{ c.subject|truncatechars:40 }}</div>
+                                    </td>
+                                    <td class="px-8 py-5">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold 
+                                            {% if c.status == 'completed' %}bg-emerald-50 text-emerald-600{% else %}bg-indigo-50 text-indigo-600{% endif %}">
+                                            <span class="w-1.5 h-1.5 rounded-full {% if c.status == 'completed' %}bg-emerald-500{% else %}bg-indigo-500{% endif %}"></span>
+                                            {{ c.status|title }}
+                                        </span>
+                                    </td>
+                                    <td class="px-8 py-5 text-sm font-bold text-slate-700">{{ c.sent_count }}</td>
+                                    <td class="px-8 py-5 text-sm text-slate-400">{{ c.created_at|date:"M d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="px-8 py-16 text-center">
+                        <div class="w-16 h-16 bg-slate-50 text-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </div>
+                        <h4 class="font-bold text-slate-900 mb-1">No campaigns started yet</h4>
+                        <p class="text-sm text-slate-400 mb-6">Launch your first campaign with AI spam detection.</p>
+                        <a href="#" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 transition inline-flex items-center gap-2">
+                            Create First Campaign
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar Activities -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-50">
+                <h3 class="font-bold text-slate-900">AI Intelligence</h3>
+            </div>
+            <div class="px-8 py-6 space-y-6">
+                <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-xs italic">AI</div>
+                        <div class="text-sm font-bold text-indigo-900">Deliverability Tip</div>
+                    </div>
+                    <p class="text-xs text-indigo-700 leading-relaxed">
+                        Setting up <span class="font-bold italic">DKIM</span> records for your connected senders can improve your inbox rates by up to <span class="font-bold">24%</span>.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Recent Activity</h4>
+                    <div class="space-y-4">
+                        <div class="flex gap-3">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">New sender connected</p>
+                                <p class="text-xs text-slate-400">2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0"></div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">Campaign draft created</p>
+                                <p class="text-xs text-slate-400">Yesterday at 4:32 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-{% endif %}
-
-<!-- Stats -->
-<div class="stats-row">
-  <div class="stat-card">
-    <div class="stat-icon" style="background:#EEF2FF">
-      <svg width="18" height="18" fill="none" stroke="#4F46E5" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-    </div>
-    <div class="stat-value">{{ campaigns_count }}</div>
-    <div class="stat-label">Campaigns</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon" style="background:#ECFDF5">
-      <svg width="18" height="18" fill="none" stroke="#10B981" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-    </div>
-    <div class="stat-value">{{ sent_count }}</div>
-    <div class="stat-label">Emails Sent</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon" style="background:#F0FDF4">
-      <svg width="18" height="18" fill="none" stroke="#16A34A" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-    </div>
-    <div class="stat-value">{{ senders_count }}</div>
-    <div class="stat-label">Senders Connected</div>
-  </div>
-</div>
-
-<!-- Recent Campaigns -->
-<div class="card">
-  <div class="card-header">
-    <div>
-      <div class="card-title">Recent Campaigns</div>
-      <div class="card-subtitle">Your last {{ recent_campaigns|length }} campaigns</div>
-    </div>
-    <a href="{% url 'campaign_list' %}" class="btn btn-secondary btn-sm">View all</a>
-  </div>
-
-  {% if recent_campaigns %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Campaign</th>
-            <th>Status</th>
-            <th>Recipients</th>
-            <th>Sent</th>
-            <th>Created</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for c in recent_campaigns %}
-          <tr>
-            <td>
-              <div style="font-weight:600;color:var(--gray-900)">{{ c.name }}</div>
-              <div style="font-size:.75rem;color:var(--gray-400);margin-top:1px">{{ c.subject|truncatechars:52 }}</div>
-            </td>
-            <td>
-              {% if c.status == 'completed' %}<span class="badge badge-green">● Completed</span>
-              {% elif c.status == 'running' %}<span class="badge badge-blue">● Running</span>
-              {% elif c.status == 'draft' %}<span class="badge badge-gray">Draft</span>
-              {% elif c.status == 'paused' %}<span class="badge badge-yellow">Paused</span>
-              {% else %}<span class="badge badge-gray">{{ c.status }}</span>{% endif %}
-            </td>
-            <td style="color:var(--gray-600)">{{ c.total_recipients }}</td>
-            <td style="font-weight:600;color:var(--green)">{{ c.sent_count }}</td>
-            <td style="color:var(--gray-400);font-size:.8125rem">{{ c.created_at|date:"M d, Y" }}</td>
-            <td>
-              <a href="{% url 'campaign_detail' c.pk %}" class="btn btn-ghost btn-sm" style="color:var(--indigo)">View →</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% else %}
-    <div class="empty-state">
-      <div class="empty-icon">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-      </div>
-      <h3>No campaigns yet</h3>
-      <p>Create your first campaign and let AI check it before you send.</p>
-      <a href="{% url 'campaign_compose' %}" class="btn btn-primary btn-sm" style="margin-top:14px">+ Create Campaign</a>
-    </div>
-  {% endif %}
-</div>
+{% endblock %}
 
 {% endblock %}

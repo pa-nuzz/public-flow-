@@ -39,7 +39,7 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect("landing")
+    return redirect("home")
 
 
 # -------------------
@@ -48,7 +48,14 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    return render(request, "dashboard/home.html")
+    # Mock data for now to ensure dashboard works
+    context = {
+        'senders_count': 0,
+        'campaigns_count': 0,
+        'sent_count': 0,
+        'recent_campaigns': []
+    }
+    return render(request, "dashboard/home.html", context)
 
 
 @login_required

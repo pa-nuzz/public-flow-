@@ -41,30 +41,39 @@
         <div class="auth-err">{{ form.non_field_errors.0 }}</div>
       {% endif %}
 
-      <form method="post">
+      <form method="post" class="space-y-4">
         {% csrf_token %}
         <div class="auth-row">
           <div>
-            <label class="auth-label" for="id_first_name">First name</label>
-            <input class="auth-input" type="text" name="first_name" id="id_first_name" value="{{ form.first_name.value|default:'' }}" placeholder="John" autocomplete="given-name">
+            <label class="auth-label">First name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<div class="auth-err">{{ form.first_name.errors.0 }}</div>{% endif %}
           </div>
           <div>
-            <label class="auth-label" for="id_last_name">Last name</label>
-            <input class="auth-input" type="text" name="last_name" id="id_last_name" value="{{ form.last_name.value|default:'' }}" placeholder="Doe" autocomplete="family-name">
+            <label class="auth-label">Last name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<div class="auth-err">{{ form.last_name.errors.0 }}</div>{% endif %}
           </div>
         </div>
 
-        <label class="auth-label" for="id_email">Email address</label>
-        <input class="auth-input" type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}" placeholder="you@company.com" autocomplete="email" required>
-        {% if form.email.errors %}<div class="auth-err" style="margin-top:-10px;margin-bottom:12px">{{ form.email.errors.0 }}</div>{% endif %}
+        <div>
+          <label class="auth-label">Email address</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="auth-err">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
 
-        <label class="auth-label" for="id_password">Password</label>
-        <input class="auth-input" type="password" name="password" id="id_password" placeholder="Minimum 8 characters" autocomplete="new-password" required>
-        {% if form.password.errors %}<div class="auth-err" style="margin-top:-10px;margin-bottom:12px">{{ form.password.errors.0 }}</div>{% endif %}
+        <div>
+           <label class="auth-label">Password</label>
+           <!-- password1 and password2 are from UserCreationForm -->
+           {{ form.password1 }}
+           {% if form.password1.errors %}<div class="auth-err">{{ form.password1.errors.0 }}</div>{% endif %}
+        </div>
 
-        <label class="auth-label" for="id_password2">Confirm password</label>
-        <input class="auth-input" type="password" name="password2" id="id_password2" placeholder="Re-enter password" autocomplete="new-password" required>
-        {% if form.password2.errors %}<div class="auth-err" style="margin-top:-10px;margin-bottom:12px">{{ form.password2.errors.0 }}</div>{% endif %}
+        <div>
+           <label class="auth-label">Confirm password</label>
+           {{ form.password2 }}
+           {% if form.password2.errors %}<div class="auth-err">{{ form.password2.errors.0 }}</div>{% endif %}
+        </div>
 
         <button type="submit" class="auth-btn">Create Account →</button>
       </form>

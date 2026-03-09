@@ -27,9 +27,24 @@ class RegisterForm(UserCreationForm):
         })
     )
 
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(attrs={
+            "class": "auth-input",
+            "placeholder": "Password"
+        })
+    )
+    password2 = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(attrs={
+            "class": "auth-input",
+            "placeholder": "Confirm Password"
+        })
+
+    )
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email"]
+        fields = ["first_name", "last_name", "email", "password1", "password2"]
 
     def save(self, commit=True):
         user = super().save(commit=False)

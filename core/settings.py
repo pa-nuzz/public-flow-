@@ -109,3 +109,6 @@ AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
+
+# Machine Learning
+ML_MODEL_PATH = BASE_DIR / 'ml_models' / 'spam_model.pkl'

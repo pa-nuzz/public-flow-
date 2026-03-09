@@ -10,6 +10,7 @@ urlpatterns = [
     path('', landing_view, name='home'),
     path('campaign/', include('apps.campaigns.urls')),
     path('accounts/', include('apps.accounts.urls')),
+    path('intelligence/', include('apps.intelligence.urls')),
     path('settings/', settings_view, name='settings'),
 ]
 

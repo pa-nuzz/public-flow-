@@ -42,15 +42,12 @@ def logout_view(request):
     return redirect("home")
 
 
-# -------------------
-# DASHBOARD
-# -------------------
-
+from apps.senders.models import Sender
+from apps.campaigns.models import Campaign
+from django.db.models import Sum
 @login_required
 def dashboard_view(request):
-    from apps.senders.models import Sender
-    from apps.campaigns.models import Campaign
-    from django.db.models import Sum
+    
 
     senders_count = Sender.objects.filter(user=request.user, is_active=True).count()
     user_campaigns = Campaign.objects.filter(user=request.user)

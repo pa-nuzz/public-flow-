@@ -41,7 +41,7 @@
         <div class="auth-err">{{ form.non_field_errors.0 }}</div>
       {% endif %}
 
-      <form method="post" class="space-y-4">
+      <form method="post"  action="{% url 'register' %}" class="space-y-4">
         {% csrf_token %}
         <div class="auth-row">
           <div>

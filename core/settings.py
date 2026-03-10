@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'apps.senders',
     'apps.campaigns',
     'apps.intelligence',
+    'apps.dashboard',
 ]
 
 MIDDLEWARE = [

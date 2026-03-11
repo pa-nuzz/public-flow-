@@ -1,24 +1,29 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from apps.senders.models import *
-from .models import *
+from apps.senders.models import Sender
+from .models import Campaign
+from .forms import CampaignForm
+from django.contrib import messages
 
-# @login_required
+# Create your views here.
+@login_required
 def campaign_create(request):
-    # Fetch data to populate the dropdown selects
-    # senders = SMTPProfile.objects.filter(user=request.user, is_active=True)
-    # lists = SubscriberList.objects.filter(user=request.user)
-
-    if request.method == "POST":
-        # logic to save the campaign (Draft) goes here
-        # Dev A and B will collaborate here later to add Premailer logic
-        pass
-
-    context = {
-        'senders': "senders",
-        'lists': "lists"
-    }
-    return render(request, 'campaigns/campaigns_create.html', context)
+    senders = Sender.objects.filter(user=request.user, is_active=True)
+    
+    if not senders.exists():
+        messages.warning(request, 'Please add a sender before creating a campaign.')
+        return redirect('dashboard:settings')
+    
+    if request.method == 'POST':
+        form = CampaignForm(request.POST, user=request.user)
+        if form.is_valid():
+            campaign = form.save(commit=False)
+            campaign.user = request.user
+            campaign.status = 'draft'
+            campaign.save()
+            messages.success(request, f'Campaign "{campaign.name}" saved as draft.')
+            return redirect('dashboard:dashboard') # Detail view not implemented yet, using dashboard
+    else:
+        form = CampaignForm(user=request.user)
+    
+    return render(request, 'campaigns/create.html', {'form': form, 'senders': senders})

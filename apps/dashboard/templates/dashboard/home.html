@@ -11,8 +11,11 @@
             <p class="text-slate-500">Here's a quick look at your mail flow performance.</p>
         </div>
         <div class="flex gap-3">
-            <a href="#" class="px-5 py-2.5 bg-white border border-gray-200 text-slate-700 font-bold rounded-xl hover:bg-gray-50 transition text-sm">View Reports</a>
-            <a href="#" class="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 text-sm flex items-center gap-2">
+            <a href="{% url 'dashboard:settings' %}" class="px-5 py-2.5 bg-white text-slate-700 font-bold rounded-xl hover:bg-gray-50 transition border border-gray-200 text-sm flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                Manage Senders
+            </a>
+            <a href="{% url 'campaigns:campaign_create' %}" class="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 text-sm flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 New Campaign
             </a>
@@ -21,48 +24,65 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+        <div class="bg-white p-7 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
             <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-indigo-50 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div class="w-12 h-12 bg-primary-light text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 </div>
-                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">+12%</span>
+                {% if active_count > 0 %}
+                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">{{ active_count }} Sending</span>
+                {% elif draft_count > 0 %}
+                <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-wider">{{ draft_count }} Draft{{ draft_count|pluralize }}</span>
+                {% endif %}
             </div>
-            <div class="text-3xl font-black text-slate-900">{{ campaigns_count|default:0 }}</div>
-            <div class="text-sm font-semibold text-slate-400">Total Campaigns</div>
+            <div class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ campaigns_count|default:"0" }}</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Total Campaigns</div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+        <div class="bg-white p-7 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
             <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 </div>
-                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">98% Success</span>
+                {% if sent_count > 0 %}
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Live</span>
+                </div>
+                {% endif %}
             </div>
-            <div class="text-3xl font-black text-slate-900">{{ sent_count|default:0 }}</div>
-            <div class="text-sm font-semibold text-slate-400">Emails Sent</div>
+            <div class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ sent_count|default:"0" }}</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Emails Dispatched</div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+        <div class="bg-white p-7 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
             <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 </div>
-                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">Avg 45%</span>
+                {% if avg_open_rate > 20 %}
+                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Good</span>
+                {% elif avg_open_rate > 0 %}
+                <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Avg Rate</span>
+                {% endif %}
             </div>
-            <div class="text-3xl font-black text-slate-900">0%</div>
-            <div class="text-sm font-semibold text-slate-400">Open Rate</div>
+            <div class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ avg_open_rate|default:"0.0" }}%</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Engagement Rate</div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+        <div class="bg-white p-7 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
             <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
-                <span class="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">{{ senders_count|default:0 }} Active</span>
+                {% if senders_count > 0 %}
+                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Verified</span>
+                {% else %}
+                <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Setup Needed</span>
+                {% endif %}
             </div>
-            <div class="text-3xl font-black text-slate-900">{{ senders_count|default:0 }}</div>
-            <div class="text-sm font-semibold text-slate-400">Connected Senders</div>
+            <div class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ senders_count|default:"0" }}</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Active Senders</div>
         </div>
     </div>
 
@@ -72,7 +92,6 @@
         <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
                 <h3 class="font-bold text-slate-900">Recent Campaigns</h3>
-                <a href="#" class="text-sm font-bold text-primary hover:underline">View all</a>
             </div>
             <div class="p-0">
                 {% if recent_campaigns %}
@@ -80,27 +99,43 @@
                         <table class="w-full text-left">
                             <thead>
                                 <tr class="bg-gray-50/50">
-                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Campaign</th>
-                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Status</th>
-                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Sent</th>
-                                    <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Date</th>
+                                    <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Campaign</th>
+                                    <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Status</th>
+                                    <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Sent</th>
+                                    <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Opens</th>
+                                    <th class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Date</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
                                 {% for c in recent_campaigns %}
-                                <tr class="hover:bg-gray-50/50 transition-colors group">
+                                <tr class="hover:bg-gray-50/50 transition-colors duration-200 group">
                                     <td class="px-8 py-5">
-                                        <div class="font-bold text-slate-900 group-hover:text-primary transition-colors">{{ c.name }}</div>
-                                        <div class="text-xs text-slate-400">{{ c.subject|truncatechars:40 }}</div>
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-primary-light text-primary rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0">{{ c.name|first|upper }}</div>
+                                            <div>
+                                                <div class="font-bold text-slate-900 group-hover:text-primary transition-colors">{{ c.name }}</div>
+                                                <div class="text-xs text-slate-400">{{ c.subject|truncatechars:40 }}</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="px-8 py-5">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold 
-                                            {% if c.status == 'completed' %}bg-emerald-50 text-emerald-600{% else %}bg-indigo-50 text-indigo-600{% endif %}">
-                                            <span class="w-1.5 h-1.5 rounded-full {% if c.status == 'completed' %}bg-emerald-500{% else %}bg-indigo-500{% endif %}"></span>
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                            {% if c.status == 'completed' %}bg-emerald-50 text-emerald-600
+                                            {% elif c.status == 'sending' %}bg-blue-50 text-blue-600
+                                            {% elif c.status == 'scheduled' %}bg-amber-50 text-amber-600
+                                            {% elif c.status == 'failed' %}bg-red-50 text-red-600
+                                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                            <span class="w-1.5 h-1.5 rounded-full
+                                                {% if c.status == 'completed' %}bg-emerald-500
+                                                {% elif c.status == 'sending' %}bg-blue-500 animate-pulse
+                                                {% elif c.status == 'scheduled' %}bg-amber-500
+                                                {% elif c.status == 'failed' %}bg-red-500
+                                                {% else %}bg-gray-400{% endif %}"></span>
                                             {{ c.status|title }}
                                         </span>
                                     </td>
-                                    <td class="px-8 py-5 text-sm font-bold text-slate-700">{{ c.sent_count }}</td>
+                                    <td class="px-8 py-5 text-sm font-bold text-slate-700 tabular-nums">{{ c.sent_count }}</td>
+                                    <td class="px-8 py-5 text-sm font-bold text-slate-700 tabular-nums">{{ c.open_count|default:"0" }}</td>
                                     <td class="px-8 py-5 text-sm text-slate-400">{{ c.created_at|date:"M d" }}</td>
                                 </tr>
                                 {% endfor %}
@@ -114,7 +149,8 @@
                         </div>
                         <h4 class="font-bold text-slate-900 mb-1">No campaigns started yet</h4>
                         <p class="text-sm text-slate-400 mb-6">Launch your first campaign with AI spam detection.</p>
-                        <a href="#" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 transition inline-flex items-center gap-2">
+                        <a href="{% url 'campaigns:campaign_create' %}" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-indigo-700 transition inline-flex items-center gap-2 shadow-lg shadow-indigo-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                             Create First Campaign
                         </a>
                     </div>
@@ -122,40 +158,73 @@
             </div>
         </div>
 
-        <!-- Sidebar Activities -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div class="px-8 py-6 border-b border-gray-50">
-                <h3 class="font-bold text-slate-900">AI Intelligence</h3>
-            </div>
-            <div class="px-8 py-6 space-y-6">
-                <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-xs italic">AI</div>
-                        <div class="text-sm font-bold text-indigo-900">Deliverability Tip</div>
-                    </div>
-                    <p class="text-xs text-indigo-700 leading-relaxed">
-                        Setting up <span class="font-bold italic">DKIM</span> records for your connected senders can improve your inbox rates by up to <span class="font-bold">24%</span>.
-                    </p>
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- AI Intelligence Card -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900 text-sm">AI Intelligence</h3>
+                    <div class="w-6 h-6 bg-indigo-600 text-white rounded-md flex items-center justify-center font-bold text-[9px] italic">AI</div>
                 </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Recent Activity</h4>
-                    <div class="space-y-4">
-                        <div class="flex gap-3">
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></div>
-                            <div>
-                                <p class="text-sm font-bold text-slate-800">New sender connected</p>
-                                <p class="text-xs text-slate-400">2 hours ago</p>
-                            </div>
+                <div class="p-6 space-y-5">
+                    <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                            <span class="text-xs font-bold text-indigo-900">Deliverability Tip</span>
                         </div>
-                        <div class="flex gap-3">
-                            <div class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0"></div>
-                            <div>
-                                <p class="text-sm font-bold text-slate-800">Campaign draft created</p>
-                                <p class="text-xs text-slate-400">Yesterday at 4:32 PM</p>
-                            </div>
-                        </div>
+                        <p class="text-xs text-indigo-700 leading-relaxed">
+                            Setting up <span class="font-bold">DKIM</span> records can improve inbox rates by up to <span class="font-bold">24%</span>.
+                        </p>
                     </div>
+
+                    {% if avg_spam_score is not None %}
+                    <div class="p-4 bg-{% if avg_spam_score < 40 %}emerald{% elif avg_spam_score < 70 %}amber{% else %}red{% endif %}-50 rounded-xl border border-{% if avg_spam_score < 40 %}emerald{% elif avg_spam_score < 70 %}amber{% else %}red{% endif %}-100">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-700">Avg Spam Score</span>
+                            <span class="text-lg font-black text-{% if avg_spam_score < 40 %}emerald{% elif avg_spam_score < 70 %}amber{% else %}red{% endif %}-600 tabular-nums">{{ avg_spam_score }}%</span>
+                        </div>
+                        <div class="w-full bg-white/50 rounded-full h-2">
+                            <div class="h-2 rounded-full bg-{% if avg_spam_score < 40 %}emerald{% elif avg_spam_score < 70 %}amber{% else %}red{% endif %}-500 transition-all duration-500" style="width: {{ avg_spam_score }}%"></div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-2">{% if avg_spam_score < 40 %}Great! Low spam risk.{% elif avg_spam_score < 70 %}Moderate — review your content.{% else %}High risk — improve your email copy.{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-50">
+                    <h3 class="font-bold text-slate-900 text-sm">Quick Actions</h3>
+                </div>
+                <div class="p-4 space-y-2">
+                    <a href="{% url 'campaigns:campaign_create' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                        <div class="w-8 h-8 bg-primary-light text-primary rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">Create Campaign</p>
+                            <p class="text-[10px] text-gray-400">Draft a new outbound email</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'dashboard:settings' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                        <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.172 13.828a4 4 0 015.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">Connect Sender</p>
+                            <p class="text-[10px] text-gray-400">Add an SMTP provider</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'dashboard:profile' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                        <div class="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">Edit Profile</p>
+                            <p class="text-[10px] text-gray-400">Update your information</p>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

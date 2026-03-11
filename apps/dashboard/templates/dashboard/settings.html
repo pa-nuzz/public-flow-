@@ -1,238 +1,172 @@
 {% extends "base_dashboard.html" %}
-{% block title %}Settings — MailFlow AI{% endblock %}
-{% block page_title %}Settings{% endblock %}
+{% block title %}SMTP Senders — MailFlow AI{% endblock %}
+{% block page_title %}SMTP Senders{% endblock %}
 {% block content %}
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
 
-  <!-- Profile -->
-  <div class="bg-white shadow-sm rounded-xl p-6 border">
-    <h2 class="text-lg font-semibold mb-4">Profile</h2>
+  <!-- Add Sender Form -->
+  <div class="lg:col-span-1 space-y-6">
+    <div class="bg-white shadow-sm rounded-2xl p-8 border border-gray-100">
+      <div class="mb-8">
+        <h2 class="text-xl font-extrabold text-[#0F1117] tracking-tight">Connect Sender</h2>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Configure SMTP Outbound</p>
+      </div>
 
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% load widget_tweaks %}
+        <input type="hidden" name="action" value="add_sender">
 
-      <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="text-sm font-medium text-gray-600">First Name</label>
-          <input type="text" name="first_name"
-          value="{{ profile_form.first_name.value|default:'' }}"
-          placeholder="John"
-          class="mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <label class="block text-sm font-bold text-gray-700 mb-2">Display Name</label>
+          {{ sender_form.display_name|add_class:"auth-input"|attr:"placeholder:e.g. Outreach Team" }}
         </div>
 
         <div>
-          <label class="text-sm font-medium text-gray-600">Last Name</label>
-          <input type="text" name="last_name"
-          value="{{ profile_form.last_name.value|default:'' }}"
-          placeholder="Doe"
-          class="mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <label class="block text-sm font-bold text-gray-700 mb-2">From Email</label>
+          {{ sender_form.from_email|add_class:"auth-input"|attr:"placeholder:hello@company.com" }}
         </div>
-      </div>
 
-      <div>
-        <label class="text-sm font-medium text-gray-600">Email Address</label>
-        <input type="email" name="email"
-        value="{{ profile_form.email.value|default:'' }}"
-        required
-        class="mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-
-        {% if profile_form.email.errors %}
-        <p class="text-red-500 text-sm mt-1">{{ profile_form.email.errors.0 }}</p>
-        {% endif %}
-      </div>
-
-      <button type="submit" name="save_profile"
-      class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg">
-      Save Profile
-      </button>
-
-    </form>
-  </div>
-
-
-  <!-- Add Sender -->
-  <div class="bg-white shadow-sm rounded-xl p-6 border">
-
-    <h2 class="text-lg font-semibold">Connect SMTP Sender</h2>
-    <p class="text-sm text-gray-500 mb-4">Gmail, Outlook, or any custom SMTP</p>
-
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-
-      <div>
-        <label class="text-sm font-medium text-gray-600">Display Name</label>
-        <input type="text" name="name"
-        value="{{ sender_form.name.value|default:'' }}"
-        placeholder="e.g. Sales Team"
-        class="mt-1 w-full border rounded-lg px-3 py-2">
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-600">From Email</label>
-        <input type="email" name="from_email"
-        value="{{ sender_form.from_email.value|default:'' }}"
-        placeholder="sales@yourcompany.com"
-        class="mt-1 w-full border rounded-lg px-3 py-2">
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-600">Provider</label>
-        <select name="provider"
-        class="mt-1 w-full border rounded-lg px-3 py-2">
-          <option value="gmail">Gmail / Google Workspace</option>
-          <option value="outlook">Outlook / Microsoft 365</option>
-          <option value="custom">Custom SMTP</option>
-        </select>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="text-sm font-medium text-gray-600">SMTP Host</label>
-          <input type="text" name="smtp_host"
-          value="{{ sender_form.smtp_host.value|default:'smtp.gmail.com' }}"
-          placeholder="smtp.gmail.com"
-          class="mt-1 w-full border rounded-lg px-3 py-2">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-sm font-bold text-gray-700 mb-2">SMTP Provider</label>
+            {{ sender_form.provider|add_class:"auth-input" }}
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Host</label>
+            {{ sender_form.smtp_host|add_class:"auth-input"|attr:"placeholder:smtp.gmail.com" }}
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Port</label>
+            {{ sender_form.smtp_port|add_class:"auth-input"|attr:"placeholder:587" }}
+          </div>
         </div>
 
         <div>
-          <label class="text-sm font-medium text-gray-600">Port</label>
-          <input type="number" name="smtp_port"
-          value="{{ sender_form.smtp_port.value|default:'587' }}"
-          class="mt-1 w-full border rounded-lg px-3 py-2">
+          <label class="block text-sm font-bold text-gray-700 mb-2">SMTP Username</label>
+          {{ sender_form.username|add_class:"auth-input"|attr:"placeholder:username or email" }}
         </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">App Password</label>
+          {{ sender_form.smtp_password|add_class:"auth-input"|attr:"placeholder:••••••••••••••••" }}
+          <p class="text-[10px] text-gray-400 mt-2 font-medium">Use an App Password if using 2FA (Gmail/Outlook).</p>
+        </div>
+
+        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+          {{ sender_form.use_tls|add_class:"w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" }}
+          <label class="text-sm font-semibold text-gray-700">Enable TLS encryption</label>
+        </div>
+
+        <div class="pt-4 space-y-3">
+          <button type="submit" class="btn-primary w-full justify-center shadow-lg shadow-indigo-500/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Save Sender Configuration
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Quick Help Card -->
+    <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-xl">
+      <div class="flex items-center gap-2 mb-3">
+        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h4 class="text-sm font-bold">Quick Setup Guide</h4>
       </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-600">
-        Username
-        <span class="text-gray-400 text-xs">(usually your email)</span>
-        </label>
-
-        <input type="email" name="smtp_user"
-        value="{{ sender_form.smtp_user.value|default:'' }}"
-        placeholder="your@gmail.com"
-        class="mt-1 w-full border rounded-lg px-3 py-2">
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-600">App Password</label>
-        <input type="password" name="smtp_password"
-        placeholder="Gmail 16-char App Password"
-        class="mt-1 w-full border rounded-lg px-3 py-2">
-
-        <p class="text-xs text-gray-400 mt-1">
-        Gmail: Account → Security → 2-Step → App Passwords
-        </p>
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-gray-600">Daily Send Limit</label>
-        <input type="number" name="daily_limit"
-        value="{{ sender_form.daily_limit.value|default:'500' }}"
-        min="1" max="2000"
-        class="mt-1 w-full border rounded-lg px-3 py-2">
-
-        <p class="text-xs text-gray-400 mt-1">
-        Gmail: 500/day free · Google Workspace: 2,000/day
-        </p>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input type="checkbox" name="use_tls" id="use_tls"
-        checked
-        class="accent-indigo-600">
-        <label for="use_tls" class="text-sm text-gray-600">
-        Use TLS (recommended)
-        </label>
-      </div>
-
-      <button type="submit" name="add_sender"
-      class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium">
-      Add Sender
-      </button>
-
-    </form>
-  </div>
-</div>
-
-
-<!-- Connected Senders -->
-<div class="bg-white shadow-sm rounded-xl p-6 border mt-6">
-
-  <div class="flex justify-between items-center mb-4">
-    <div>
-      <h2 class="text-lg font-semibold">Connected Senders</h2>
-      <p class="text-sm text-gray-500">
-      {{ senders|length }} sender{{ senders|length|pluralize }} configured
-      </p>
+      <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
+        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold mt-px">1.</span> Enter your SMTP host and port</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold mt-px">2.</span> Use an App Password for Gmail/Outlook 2FA</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold mt-px">3.</span> Keep TLS enabled for secure delivery</li>
+      </ul>
     </div>
   </div>
 
-  {% if senders %}
+  <!-- Connected Senders List -->
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white shadow-sm rounded-2xl border border-gray-100 overflow-hidden">
+      <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-extrabold text-[#0F1117] tracking-tight">Connected Accounts</h2>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{{ senders|length }} sender{{ senders|length|pluralize }} configured</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">System Online</span>
+        </div>
+      </div>
 
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="text-gray-500 border-b">
-        <tr>
-          <th class="text-left py-2">Name</th>
-          <th class="text-left py-2">Email</th>
-          <th class="text-left py-2">Provider</th>
-          <th class="text-left py-2">Daily Limit</th>
-          <th class="text-left py-2">Added</th>
-          <th></th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        {% for s in senders %}
-
-        <tr class="border-b hover:bg-gray-50">
-
-          <td class="py-3 font-medium">{{ s.name }}</td>
-
-          <td class="text-gray-500">{{ s.from_email }}</td>
-
-          <td>
-            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
-              {{ s.get_provider_display }}
-            </span>
-          </td>
-
-          <td class="text-gray-600">{{ s.daily_limit }}/day</td>
-
-          <td class="text-gray-400 text-xs">
-            {{ s.created_at|date:"M d, Y" }}
-          </td>
-
-          <td>
-            <a href="{% url 'sender_delete' s.pk %}"
-            onclick="return confirm('Remove this sender?')"
-            class="text-red-600 hover:underline text-sm">
-            Remove
-            </a>
-          </td>
-
-        </tr>
-
-        {% endfor %}
-
-      </tbody>
-    </table>
+      <div class="p-0">
+        {% if senders %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="bg-gray-50/50">
+                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Sender Profile</th>
+                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Configuration</th>
+                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Status</th>
+                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              {% for s in senders %}
+              <tr class="hover:bg-gray-50/30 transition-colors group">
+                <td class="px-8 py-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-primary-light text-primary rounded-lg flex items-center justify-center font-bold text-sm">{{ s.display_name|first|upper }}</div>
+                    <div>
+                      <div class="font-bold text-slate-900">{{ s.display_name }}</div>
+                      <div class="text-xs text-gray-500 font-medium">{{ s.from_email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-8 py-5">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold uppercase">{{ s.provider|title }}</span>
+                    <span class="text-xs text-gray-400 font-mono">{{ s.smtp_host }}:{{ s.smtp_port }}</span>
+                  </div>
+                  <div class="text-[10px] text-gray-400 mt-1">{% if s.use_tls %}TLS Enabled{% else %}No TLS{% endif %} &middot; Limit {{ s.daily_limit }}/day</div>
+                </td>
+                <td class="px-8 py-5">
+                  {% if s.is_active %}
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active
+                  </span>
+                  {% else %}
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Inactive
+                  </span>
+                  {% endif %}
+                </td>
+                <td class="px-8 py-5 text-right">
+                  <form action="{% url 'dashboard:settings' %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_sender">
+                    <input type="hidden" name="sender_id" value="{{ s.id }}">
+                    <button type="submit" onclick="return confirm('Disconnect this sender? Campaigns using it will need a new sender.')" class="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="px-8 py-16 text-center">
+          <div class="w-16 h-16 bg-gray-50 text-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <h4 class="font-bold text-slate-900 mb-1">No senders connected</h4>
+          <p class="text-sm text-gray-500 mb-4">Connect an SMTP account to start sending campaigns.</p>
+          <p class="text-xs text-gray-400">Use the form on the left to add your first sender.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
-
-  {% else %}
-
-  <div class="text-center py-10">
-    <h3 class="text-lg font-semibold">No senders connected</h3>
-    <p class="text-gray-500 mt-1">
-    Add a Gmail or SMTP sender above to start sending email campaigns.
-    </p>
-  </div>
-
-  {% endif %}
-
 </div>
-
 {% endblock %}

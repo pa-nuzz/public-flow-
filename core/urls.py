@@ -7,11 +7,11 @@ from core.views import landing_view
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_view, name='home'),
-    path('campaign/', include('apps.campaigns.urls')),
-    path('accounts/', include('apps.accounts.urls')),
-    path('dashboard/', include('apps.dashboard.urls')),
-    path('intelligence/', include('apps.intelligence.urls')),
-]
+    path('campaign/', include('apps.campaigns.urls', namespace='campaigns')),
+    path('accounts/', include('apps.accounts.urls', namespace='accounts')),
+    path('dashboard/', include('apps.dashboard.urls', namespace='dashboard')),
+    path('intelligence/', include('apps.intelligence.urls', namespace='intelligence')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,220 @@
+{% extends 'base_dashboard.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Create Campaign - MailFlow AI{% endblock %}
+{% block page_title %}Create Campaign{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <form method="post" id="campaign-form" class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    {% csrf_token %}
+
+    <section class="xl:col-span-2 space-y-6">
+      <!-- Step 1: Campaign Identity -->
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 md:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">1</div>
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Campaign Identity</h2>
+            <p class="text-xs text-gray-500 uppercase tracking-wider mt-0.5">How your campaign will appear</p>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="md:col-span-2">
+            <label for="id_name" class="block text-sm font-semibold text-slate-700 mb-2">Campaign Name</label>
+            {{ form.name|add_class:"auth-input"|attr:"placeholder:Q2 Product Launch - Segment A" }}
+            {% if form.name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+          </div>
+
+          <div class="md:col-span-2">
+            <label for="id_subject" class="block text-sm font-semibold text-slate-700 mb-2">Subject Line</label>
+            {{ form.subject|add_class:"auth-input"|attr:"placeholder:Your April update is ready" }}
+            {% if form.subject.errors %}<p class="mt-1 text-xs text-red-600">{{ form.subject.errors.0 }}</p>{% endif %}
+            <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Keep it under 60 characters for best open rates.</p>
+          </div>
+
+          <div>
+            <label for="id_from_name" class="block text-sm font-semibold text-slate-700 mb-2">From Name</label>
+            {{ form.from_name|add_class:"auth-input"|attr:"placeholder:MailFlow Team" }}
+            {% if form.from_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.from_name.errors.0 }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label for="id_reply_to" class="block text-sm font-semibold text-slate-700 mb-2">Reply-To Email</label>
+            {{ form.reply_to|add_class:"auth-input"|attr:"placeholder:support@example.com" }}
+            {% if form.reply_to.errors %}<p class="mt-1 text-xs text-red-600">{{ form.reply_to.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Message Content -->
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 md:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">2</div>
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Message Content</h2>
+            <p class="text-xs text-gray-500 uppercase tracking-wider mt-0.5">Use both HTML and plain text for better delivery</p>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <div>
+            <label for="id_body_html" class="block text-sm font-semibold text-slate-700 mb-2">HTML Body</label>
+            {{ form.body_html|add_class:"auth-input min-h-56 font-mono text-sm"|attr:"placeholder:<h1>Hello [first_name]</h1><p>Thanks for joining us.</p>" }}
+            {% if form.body_html.errors %}<p class="mt-1 text-xs text-red-600">{{ form.body_html.errors.0 }}</p>{% endif %}
+          </div>
+
+          <div>
+            <label for="id_body_text" class="block text-sm font-semibold text-slate-700 mb-2">Plain Text Body</label>
+            {{ form.body_text|add_class:"auth-input min-h-40"|attr:"placeholder:Hello [first_name], thanks for joining us." }}
+            {% if form.body_text.errors %}<p class="mt-1 text-xs text-red-600">{{ form.body_text.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="space-y-6">
+      <!-- Delivery Settings -->
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">3</div>
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Delivery Settings</h3>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label for="id_sender" class="block text-sm font-semibold text-slate-700 mb-2">Sender Profile</label>
+            {{ form.sender|add_class:"auth-input" }}
+            {% if form.sender.errors %}<p class="mt-1 text-xs text-red-600">{{ form.sender.errors.0 }}</p>{% endif %}
+            <p class="mt-2 text-xs text-gray-500">{{ senders|length }} active sender{{ senders|length|pluralize }} available.</p>
+          </div>
+
+          <div>
+            <label for="id_scheduled_at" class="block text-sm font-semibold text-slate-700 mb-2">Schedule (Optional)</label>
+            {{ form.scheduled_at|add_class:"auth-input"|attr:"type:datetime-local" }}
+            {% if form.scheduled_at.errors %}<p class="mt-1 text-xs text-red-600">{{ form.scheduled_at.errors.0 }}</p>{% endif %}
+            <p class="mt-2 text-xs text-gray-500">Leave empty to keep campaign as draft.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Spam Analysis -->
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-[9px] italic">AI</div>
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Spam Analysis</h3>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Check your content against our AI model before sending.</p>
+
+        <div id="spam-result" class="hidden mb-4">
+          <div class="p-4 rounded-xl border" id="spam-result-box">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-700">Spam Score</span>
+              <span class="text-lg font-black tabular-nums" id="spam-score-val">--</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+              <div class="h-2 rounded-full transition-all duration-700" id="spam-bar" style="width: 0%"></div>
+            </div>
+            <p class="text-[10px] font-medium" id="spam-verdict"></p>
+          </div>
+        </div>
+
+        <button type="button" id="analyze-spam-btn" class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold hover:bg-indigo-100 transition-all border border-indigo-100">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          Analyze with AI
+        </button>
+      </div>
+
+      <!-- Save Actions -->
+      <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-xl">
+        <h3 class="text-sm font-bold uppercase tracking-widest">Ready to Save</h3>
+        <p class="text-xs text-slate-300 mt-2 leading-relaxed">Campaigns are saved as draft first so you can verify content before launching.</p>
+
+        <div class="mt-6 flex flex-col gap-3">
+          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            Save Draft Campaign
+          </button>
+          <a href="{% url 'dashboard:dashboard' %}" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-800 transition-colors text-sm font-semibold">
+            Cancel
+          </a>
+        </div>
+      </div>
+    </aside>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('analyze-spam-btn').addEventListener('click', async function() {
+    const subject = document.getElementById('id_subject')?.value || '';
+    const bodyHtml = document.getElementById('id_body_html')?.value || '';
+    const bodyText = document.getElementById('id_body_text')?.value || '';
+    const content = subject + ' ' + bodyHtml + ' ' + bodyText;
+
+    if (content.trim().length < 10) {
+        alert('Please write some content (subject + body) before analyzing.');
+        return;
+    }
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Analyzing...';
+
+    try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const resp = await fetch('{% url "intelligence:analyze_spam" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            body: JSON.stringify({content: content})
+        });
+        const data = await resp.json();
+
+        const score = data.spam_score ?? 0;
+        const risk = data.risk_level ?? 'unknown';
+        const resultEl = document.getElementById('spam-result');
+        const box = document.getElementById('spam-result-box');
+        const bar = document.getElementById('spam-bar');
+        const val = document.getElementById('spam-score-val');
+        const verdict = document.getElementById('spam-verdict');
+
+        resultEl.classList.remove('hidden');
+        val.textContent = score + '%';
+        bar.style.width = score + '%';
+
+        if (score < 40) {
+            box.className = 'p-4 rounded-xl border border-emerald-100 bg-emerald-50';
+            bar.className = 'h-2 rounded-full transition-all duration-700 bg-emerald-500';
+            val.className = 'text-lg font-black tabular-nums text-emerald-600';
+            verdict.className = 'text-[10px] font-medium text-emerald-700';
+            verdict.textContent = 'Low risk — your content looks clean!';
+        } else if (score < 70) {
+            box.className = 'p-4 rounded-xl border border-amber-100 bg-amber-50';
+            bar.className = 'h-2 rounded-full transition-all duration-700 bg-amber-500';
+            val.className = 'text-lg font-black tabular-nums text-amber-600';
+            verdict.className = 'text-[10px] font-medium text-amber-700';
+            verdict.textContent = 'Moderate risk — consider revising trigger words.';
+        } else {
+            box.className = 'p-4 rounded-xl border border-red-100 bg-red-50';
+            bar.className = 'h-2 rounded-full transition-all duration-700 bg-red-500';
+            val.className = 'text-lg font-black tabular-nums text-red-600';
+            verdict.className = 'text-[10px] font-medium text-red-700';
+            verdict.textContent = 'High risk — rewrite your copy to improve deliverability.';
+        }
+    } catch (e) {
+        alert('Analysis failed. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Analyze with AI';
+    }
+});
+</script>
+{% endblock %}

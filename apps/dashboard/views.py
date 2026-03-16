@@ -32,15 +32,21 @@ def dashboard_view(request):
     }
     return render(request, "dashboard/home.html", context)
 
+
 @login_required
 def settings_view(request):
     senders = Sender.objects.filter(user=request.user)
     sender_form = SenderForm()
-    
+
     if request.method == 'POST':
         action = request.POST.get('action')
+
         if action == 'add_sender':
             sender_form = SenderForm(request.POST)
+
+            if not sender_form.is_valid():
+                print(f"Form errors: {sender_form.errors}")  # Debug
+
             if sender_form.is_valid():
                 sender = sender_form.save(commit=False)
                 sender.user = request.user
@@ -49,14 +55,17 @@ def settings_view(request):
                 sender.save()
                 messages.success(request, 'Sender added successfully.')
                 return redirect('dashboard:settings')
+            else:
+                messages.error(request, 'Please correct the errors below.')
         elif action == 'delete_sender':
             sender_id = request.POST.get('sender_id')
             Sender.objects.filter(id=sender_id, user=request.user).delete()
             messages.success(request, 'Sender removed.')
             return redirect('dashboard:settings')
-    
+
     context = {'senders': senders, 'sender_form': sender_form}
     return render(request, 'dashboard/settings.html', context)
+
 
 @login_required
 def profile_view(request):

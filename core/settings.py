@@ -174,9 +174,40 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # SMTP Encryption Key
 SMTP_ENCRYPTION_KEY = config('SMTP_ENCRYPTION_KEY')
+print(f"ENCRYPTION_KEY from env: {SMTP_ENCRYPTION_KEY}")
+# Get encryption key from environment
+ENCRYPTION_KEY = config('ENCRYPTION_KEY')
+print(f"ENCRYPTION_KEY from env: {ENCRYPTION_KEY}")
+
+# Optional: Add validation to ensure key exists in production
+if not ENCRYPTION_KEY and not DEBUG:
+    raise ValueError("ENCRYPTION_KEY must be set in production environment")
 
 # Machine Learning
 ML_MODEL_PATH = BASE_DIR / 'ml_models' / 'spam_model.pkl'
 
 # Silencing django-ratelimit strict cache checks for development
 SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
+
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+from cryptography.fernet import Fernet
+
+load_dotenv()
+
+# Encryption Key
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
+print(f"Raw ENCRYPTION_KEY from env: {ENCRYPTION_KEY}")
+
+if not ENCRYPTION_KEY:
+    if DEBUG:
+        # Generate a key for development only
+        ENCRYPTION_KEY = Fernet.generate_key().decode()
+        print(f"WARNING: Generated temporary key: {ENCRYPTION_KEY}")
+    else:
+        raise ValueError("ENCRYPTION_KEY must be set in production environment")
+
+# Clean the key
+ENCRYPTION_KEY = ENCRYPTION_KEY.strip()
+

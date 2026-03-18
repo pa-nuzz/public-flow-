@@ -1,7 +1,13 @@
 from django.db import models
 from django.conf import settings
+from django.core import signing
 from cryptography.fernet import Fernet
 import os
+import base64
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Sender(models.Model):
     PROVIDER_CHOICES = [
@@ -25,15 +31,66 @@ class Sender(models.Model):
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def get_fernet(self):
+        """Get Fernet instance using key from settings"""
+        try:
+            key = settings.ENCRYPTION_KEY
+            if not key:
+                raise ValueError("ENCRYPTION_KEY is not set in settings")
+
+            # Ensure key is a string and strip any whitespace
+            if isinstance(key, str):
+                key = key.strip()
+
+            # Ensure the key has correct padding
+            # Fernet keys should already be properly padded, but just in case
+            key_bytes = key.encode()
+
+            # Add padding if necessary (Fernet keys should already be padded)
+            try:
+                # Test if key is valid base64
+                base64.urlsafe_b64decode(key_bytes)
+            except Exception as e:
+                logger.error(f"Invalid base64 key format: {e}")
+                # If padding is incorrect, try to fix it
+                missing_padding = len(key_bytes) % 4
+                if missing_padding:
+                    key_bytes += b'=' * (4 - missing_padding)
+                    logger.info(f"Added padding to key, new length: {len(key_bytes)}")
+
+            return Fernet(key_bytes)
+
+        except Exception as e:
+            logger.error(f"Fernet initialization error: {e}")
+            raise
+
     def set_password(self, raw_password):
-        key = settings.SMTP_ENCRYPTION_KEY.encode()
-        f = Fernet(key)
-        self._password = f.encrypt(raw_password.encode()).decode()
+        """Encrypt and set the SMTP password"""
+        try:
+            f = self.get_fernet()
+            # Encrypt the password
+            encrypted = f.encrypt(raw_password.encode())
+            # Store as base64 string in database
+            self.smtp_password = base64.urlsafe_b64encode(encrypted).decode()
+            logger.info(f"Password encrypted successfully for {self.display_name}")
+        except Exception as e:
+            logger.error(f"Password encryption error: {e}")
+            raise
 
     def get_password(self):
-        key = settings.SMTP_ENCRYPTION_KEY.encode()
-        f = Fernet(key)
-        return f.decrypt(self._password.encode()).decode()
+        """Decrypt and return the SMTP password"""
+        try:
+            if not self.smtp_password:
+                return None
+
+            f = self.get_fernet()
+            # Decode from base64 and decrypt
+            encrypted = base64.urlsafe_b64decode(self.smtp_password.encode())
+            decrypted = f.decrypt(encrypted)
+            return decrypted.decode()
+        except Exception as e:
+            logger.error(f"Password decryption error: {e}")
+            return None
 
     @property
     def is_limit_reached(self):

@@ -55,9 +55,16 @@
         </div>
 
         <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-          {{ sender_form.use_tls|add_class:"w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" }}
-          <label class="text-sm font-semibold text-gray-700">Enable TLS encryption</label>
-        </div>
+        {{ sender_form.use_tls|add_class:"w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" }}
+        <label class="text-sm font-semibold text-gray-700">Enable TLS encryption</label>
+      </div>
+
+      <!-- Add this new field -->
+      <div class="mt-4">
+        <label class="block text-sm font-bold text-gray-700 mb-2">Daily Send Limit</label>
+        {{ sender_form.daily_limit|add_class:"auth-input"|attr:"placeholder:100" }}
+        <p class="text-[10px] text-gray-400 mt-2 font-medium">Maximum emails per day from this sender</p>
+      </div>
 
         <div class="pt-4 space-y-3">
           <button type="submit" class="btn-primary w-full justify-center shadow-lg shadow-indigo-500/20">

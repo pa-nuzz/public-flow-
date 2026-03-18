@@ -1,162 +1,150 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}MailFlow AI — Stop Landing in Spam{% endblock %}
+{% block title %}MailexaAI — AI-Powered Bulk Email Platform{% endblock %}
+{% block meta_description %}Send smarter emails with AI optimization. 98.7% inbox delivery rate. Join 12,000+ businesses.{% endblock %}
 {% block content %}
 
-<!-- HERO -->
-<section class="pt-28 pb-20 relative overflow-hidden" style="background:linear-gradient(160deg,#fafafe 0%,#f0f4ff 50%,#edfcf4 100%)">
-  <div class="max-w-6xl mx-auto px-5">
-    <div class="max-w-3xl mx-auto text-center">
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-widest mb-6">
-        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-        Real ML Spam Detection
+  <section class="relative overflow-hidden bg-white py-24 sm:py-32">
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+      <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-50/80 rounded-full blur-3xl opacity-70"></div>
+      <div class="absolute top-10 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-6 lg:px-8 text-center">
+      <div class="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold px-4 py-1.5 rounded-full mb-8">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        AI-powered email infrastructure
       </div>
-      <h1 class="text-5xl md:text-6xl font-black text-slate-900 leading-none mb-5" style="letter-spacing:-.04em">
-        Stop landing in<br>
-        <span style="background:linear-gradient(135deg,#4F46E5,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">the Spam Folder.</span>
+      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto mb-6">
+        Send smarter. <span class="text-indigo-600">Land every inbox.</span>
       </h1>
-      <p class="text-lg text-slate-500 mb-8 max-w-xl mx-auto leading-relaxed">
-        Send bulk emails from multiple business identities. Our AI checks your content for spam triggers <strong class="text-slate-700">before you hit send</strong> — so you always land in the inbox.
+      <p class="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+        MailexaAI combines AI optimization with enterprise-grade infrastructure to ensure your emails reach the inbox — not the spam folder.
       </p>
-      <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="{% url 'accounts:register' %}" class="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 text-sm">Start Sending Free →</a>
-        <a href="#how-it-works" class="px-6 py-3 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition text-sm">See How It Works</a>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+        <a href="{% url 'dashboard:dashboard' %}" class="group inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3.5 rounded-lg shadow-lg hover:shadow-indigo-200 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+          Start for free
+          <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <button class="inline-flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold px-8 py-3.5 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">View demo</button>
       </div>
-      <p class="text-xs text-slate-400 mt-3">No credit card required · Free to get started</p>
+      <p class="text-sm text-gray-400 mb-6">Free forever plan · No credit card · 5-minute setup</p>
     </div>
-
-    <!-- Dashboard Preview Card -->
-    <div class="mt-14 max-w-2xl mx-auto">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-indigo-100 overflow-hidden">
-        <!-- Window chrome -->
-        <div class="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border-b border-slate-200">
-          <div class="w-3 h-3 rounded-full bg-red-400"></div>
-          <div class="w-3 h-3 rounded-full bg-amber-400"></div>
-          <div class="w-3 h-3 rounded-full bg-green-400"></div>
-          <span class="ml-3 text-xs text-slate-400 font-medium">Campaign Analysis</span>
+  </section>
+  <!-- FEATURES -->
+  <section id="features" class="py-20 bg-slate-50 border-t border-slate-100">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center mb-14">
+        <p class="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">Features</p>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Everything you need to scale email</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for feature in features %}
+        <div class="group bg-white rounded-xl border border-slate-200 p-6 shadow-xl hover:border-indigo-200 hover:shadow-2xl transition-all duration-200 hover:-translate-y-0.5">
+          <div class="w-10 h-10 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 flex items-center justify-center mb-4 transition-colors">
+            {{ feature.icon_svg|safe }}
+          </div>
+          <h3 class="text-sm font-semibold text-slate-800 mb-2">{{ feature.title }}</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">{{ feature.description }}</p>
         </div>
-        <div class="p-5">
-          <div class="flex items-center justify-between mb-4">
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  <!-- SOCIAL PROOF -->
+  <section class="py-24 bg-white border-t border-slate-100">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <p class="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">Trusted worldwide</p>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">The numbers speak for themselves</h2>
+        <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">Thousands of teams rely on MailexaAI to deliver critical communications at scale.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+        {% for stat in stats %}
+        <div class="group relative bg-slate-50 rounded-xl p-6 border border-slate-200 hover:border-indigo-200 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 transition-colors">{{ stat.icon_svg|safe }}</div>
+          </div>
+          <p class="text-3xl font-bold text-slate-900 tracking-tight">{{ stat.value }}</p>
+          <p class="mt-1 text-sm font-semibold text-slate-700">{{ stat.label }}</p>
+          <p class="mt-1 text-xs text-gray-500">{{ stat.description }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <!-- <div class="text-center">
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-8">Used by teams at</p>
+        <div class="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
+          {% for logo in logos %}
+          <span class="text-lg font-semibold text-slate-300 hover:text-slate-400 transition-colors cursor-default tracking-tight">{{ logo }}</span>
+          {% endfor %}
+        </div>
+      </div> -->
+    </div>
+  </section>
+  <!-- PRICING -->
+  <section id="pricing" class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <p class="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">Pricing</p>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Simple, transparent pricing</h2>
+        <p class="mt-4 text-lg text-gray-500 max-w-xl mx-auto">Start free. Scale as you grow. No hidden fees, no surprise invoices.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        {% for plan in plans %}
+        <div class="relative flex flex-col rounded-xl border p-8 transition-all duration-200 hover:-translate-y-0.5 {% if plan.highlighted %}border-indigo-500 shadow-2xl ring-1 ring-indigo-500/20 bg-white{% else %}border-slate-200 shadow-xl bg-white hover:border-slate-300 hover:shadow-2xl{% endif %}">
+          {% if plan.badge %}
+          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2">
+            <span class="bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md">{{ plan.badge }}</span>
+          </div>
+          {% endif %}
+          <div class="mb-6">
+            <p class="text-sm font-semibold uppercase tracking-widest mb-2 {% if plan.highlighted %}text-indigo-600{% else %}text-gray-500{% endif %}">{{ plan.name }}</p>
+            <div class="flex items-end gap-1.5 mb-2">
+              <span class="text-4xl font-bold text-slate-900">{{ plan.price }}</span>
+              <span class="text-sm text-gray-400 mb-1.5">/{{ plan.period }}</span>
+            </div>
+            <p class="text-sm text-gray-500">{{ plan.description }}</p>
+          </div>
+          <div class="h-px mb-6 {% if plan.highlighted %}bg-indigo-100{% else %}bg-slate-100{% endif %}"></div>
+          <ul class="space-y-3 flex-1 mb-8">
+            {% for feature in plan.features %}
+            <li class="flex items-start gap-3">
+              <div class="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center {% if plan.highlighted %}bg-indigo-600{% else %}bg-emerald-500{% endif %}">
+                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span class="text-sm text-slate-600">{{ feature }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          <button class="w-full py-3 px-6 rounded-lg text-sm font-semibold transition-all duration-200 {% if plan.highlighted %}bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-indigo-200 hover:shadow-xl{% else %}border border-slate-300 text-slate-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50{% endif %}">{{ plan.cta }}</button>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="text-center text-sm text-gray-400 mt-10">All plans include 99.9% uptime SLA. Questions? <a href="#" class="text-indigo-600 hover:underline font-medium">Talk to our team →</a></p>
+    </div>
+  </section>
+  <!-- TESTIMONIALS -->
+  <section class="py-24 bg-slate-50 border-t border-slate-100">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <p class="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">Testimonials</p>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Loved by teams who care about deliverability</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for t in testimonials %}
+        <div class="group flex flex-col bg-white rounded-xl border border-slate-200 shadow-xl p-7 hover:border-indigo-200 hover:shadow-2xl transition-all duration-200 hover:-translate-y-0.5">
+          <svg class="w-7 h-7 text-indigo-200 mb-5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          <p class="text-slate-600 text-sm leading-relaxed flex-1 mb-7">"{{ t.quote }}"</p>
+          <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 {{ t.color }}">{{ t.initials }}</div>
             <div>
-              <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Active Campaign</div>
-              <div class="font-bold text-slate-900">Q4 Product Launch</div>
-            </div>
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Safe to Send
-            </span>
-          </div>
-          <div class="flex gap-3 mb-4">
-            <div style="flex:1;height:6px;background:#E2E8F0;border-radius:99px;overflow:hidden"><div style="width:90%;height:100%;background:linear-gradient(90deg,#4F46E5,#10B981);border-radius:99px"></div></div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.06em">AI Spam Score</span>
-            <span style="font-size:14px;font-weight:800;color:#10B981">96 / 100</span>
-          </div>
-          <div style="height:8px;background:#F1F5F9;border-radius:99px;overflow:hidden;margin-bottom:16px">
-            <div style="width:96%;height:100%;background:#10B981;border-radius:99px"></div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center">
-            <div style="padding:10px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0">
-              <div style="font-size:18px;font-weight:800;color:#0F172A">1.2k</div>
-              <div style="font-size:11px;color:#64748B;font-weight:500">Recipients</div>
-            </div>
-            <div style="padding:10px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0">
-              <div style="font-size:18px;font-weight:800;color:#10B981">68%</div>
-              <div style="font-size:11px;color:#64748B;font-weight:500">Open Rate</div>
-            </div>
-            <div style="padding:10px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0">
-              <div style="font-size:18px;font-weight:800;color:#4F46E5">0.2%</div>
-              <div style="font-size:11px;color:#64748B;font-weight:500">Bounce</div>
+              <p class="text-sm font-semibold text-slate-800">{{ t.author }}</p>
+              <p class="text-xs text-gray-400">{{ t.role }} · {{ t.company }}</p>
             </div>
           </div>
         </div>
+        {% endfor %}
       </div>
     </div>
-  </div>
-</section>
-
-<!-- FEATURES -->
-<section id="features" class="py-20 bg-white">
-  <div class="max-w-6xl mx-auto px-5">
-    <div class="text-center mb-14">
-      <div class="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-2">Core Capabilities</div>
-      <h2 class="text-3xl md:text-4xl font-black text-slate-900 mb-3" style="letter-spacing:-.03em">Everything you need to hit the Inbox</h2>
-      <p class="text-slate-500 max-w-xl mx-auto">One platform for sending, analyzing, and optimizing your email campaigns.</p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      {% for feat in features %}
-      <div class="p-6 border border-slate-200 rounded-2xl hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-50 transition-all duration-200 group">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-          {% if feat.bg %}style="background: {{ feat.bg }};"{% endif %}>
-          <span style="font-size:18px">{{ feat.icon }}</span>
-        </div>
-        <h3 class="font-bold text-slate-900 mb-2 text-sm">{{ feat.title }}</h3>
-        <p class="text-slate-500 text-sm leading-relaxed">{{ feat.desc }}</p>
-      </div>
-      {% empty %}
-      {% for f in default_features %}
-      <div class="p-6 border border-slate-200 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-indigo-50">
-          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        </div>
-        <h3 class="font-bold text-slate-900 mb-2 text-sm">{{ f }}</h3>
-      </div>
-      {% endfor %}
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section id="how-it-works" class="py-20 bg-slate-50">
-  <div class="max-w-4xl mx-auto px-5">
-    <div class="text-center mb-14">
-      <div class="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-2">Simple Workflow</div>
-      <h2 class="text-3xl md:text-4xl font-black text-slate-900" style="letter-spacing:-.03em">From setup to inbox in minutes</h2>
-    </div>
-    <div class="space-y-4">
-      {% for step in steps %}
-      <div class="flex items-start gap-5 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-        <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0">{{ forloop.counter }}</div>
-        <div>
-          <div class="font-bold text-slate-900 mb-1">{{ step.title }}</div>
-          <div class="text-sm text-slate-500 leading-relaxed">{{ step.desc }}</div>
-        </div>
-      </div>
-      {% empty %}
-      <div class="flex items-start gap-5 p-5 bg-white rounded-2xl border border-slate-200">
-        <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0">1</div>
-        <div><div class="font-bold text-slate-900 mb-1">Connect your SMTP sender</div><div class="text-sm text-slate-500">Add Gmail or any custom SMTP account — multiple senders supported.</div></div>
-      </div>
-      <div class="flex items-start gap-5 p-5 bg-white rounded-2xl border border-slate-200">
-        <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0">2</div>
-        <div><div class="font-bold text-slate-900 mb-1">Import your contact list</div><div class="text-sm text-slate-500">Create groups and import thousands of contacts from a CSV file.</div></div>
-      </div>
-      <div class="flex items-start gap-5 p-5 bg-white rounded-2xl border border-slate-200">
-        <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0">3</div>
-        <div><div class="font-bold text-slate-900 mb-1">Write & AI-check your email</div><div class="text-sm text-slate-500">Our ML model scores your content in real-time — fix issues before you send.</div></div>
-      </div>
-      <div class="flex items-start gap-5 p-5 bg-white rounded-2xl border border-slate-200">
-        <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0">4</div>
-        <div><div class="font-bold text-slate-900 mb-1">Send and track results</div><div class="text-sm text-slate-500">Fire off the campaign and monitor opens, bounces, and delivery in analytics.</div></div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="py-20 bg-white">
-  <div class="max-w-2xl mx-auto px-5 text-center">
-    <h2 class="text-3xl md:text-4xl font-black text-slate-900 mb-4" style="letter-spacing:-.03em">Ready to hit the inbox?</h2>
-    <p class="text-slate-500 mb-8">Join teams that trust MailFlow AI to deliver their campaigns where it counts.</p>
-    <a href="{% url 'accounts:register' %}" class="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-xl shadow-indigo-200">
-      Start Sending Free
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-    </a>
-    <p class="text-xs text-slate-400 mt-3">Free forever · No credit card</p>
-  </div>
-</section>
+  </section>
+  
 
 {% endblock %}

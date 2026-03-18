@@ -10,9 +10,9 @@ from django.contrib import messages
 def campaign_create(request):
     senders = Sender.objects.filter(user=request.user, is_active=True)
     
-    if not senders.exists():
-        messages.warning(request, 'Please add a sender before creating a campaign.')
-        return redirect('dashboard:settings')
+    # if not senders.exists():
+    #     messages.warning(request, 'Please add a sender before creating a campaign.')
+    #     return redirect('dashboard:settings')
     
     if request.method == 'POST':
         form = CampaignForm(request.POST, user=request.user)
@@ -27,3 +27,8 @@ def campaign_create(request):
         form = CampaignForm(user=request.user)
     
     return render(request, 'campaigns/create.html', {'form': form, 'senders': senders})
+
+
+@login_required
+def campaign_list(request):
+    return render(request, "campaigns/list.html")

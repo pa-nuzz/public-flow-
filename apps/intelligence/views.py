@@ -32,7 +32,7 @@ def get_risk_level(score):
 def analyze_spam(request):
     try:
         data = json.loads(request.body)
-        text = data.get('text', '')[:10000] # Input sanitization: truncate
+        text = (data.get('text') or data.get('content') or '')[:10000] # Input sanitization: truncate
         
         # In a real scenario, we'd check integrity before loading. 
         # Here we fix the logic as requested.

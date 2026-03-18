@@ -6,12 +6,12 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-  <form method="post" id="campaign-form" class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+  <form method="post" id="campaign-form" class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
     {% csrf_token %}
 
     <section class="xl:col-span-2 space-y-6">
       <!-- Step 1: Campaign Identity -->
-      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 md:p-8">
+      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6 md:p-8">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">1</div>
           <div>
@@ -51,38 +51,40 @@
             {{ form.reply_to|add_class:"auth-input"|attr:"placeholder:support@example.com" }}
             {% if form.reply_to.errors %}<p class="mt-1 text-xs text-red-600">{{ form.reply_to.errors.0 }}</p>{% endif %}
           </div>
+
+          <div class="md:col-span-2">
+            <label for="id_recipient_emails" class="block text-sm font-semibold text-slate-700 mb-2">Recipients</label>
+            {{ form.recipient_emails|add_class:"auth-input min-h-24"|attr:"placeholder:alice@example.com, bob@example.com" }}
+            {% if form.recipient_emails.errors %}<p class="mt-1 text-xs text-red-600">{{ form.recipient_emails.errors.0 }}</p>{% endif %}
+            <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Add one or many emails (comma or new line separated).</p>
+          </div>
         </div>
       </div>
 
       <!-- Step 2: Message Content -->
-      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 md:p-8">
+      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6 md:p-8">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">2</div>
           <div>
             <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Message Content</h2>
-            <p class="text-xs text-gray-500 uppercase tracking-wider mt-0.5">Use both HTML and plain text for better delivery</p>
+            <p class="text-xs text-gray-500 uppercase tracking-wider mt-0.5">Write your message in plain text</p>
           </div>
         </div>
 
         <div class="space-y-5">
           <div>
-            <label for="id_body_html" class="block text-sm font-semibold text-slate-700 mb-2">HTML Body</label>
-            {{ form.body_html|add_class:"auth-input min-h-56 font-mono text-sm"|attr:"placeholder:<h1>Hello [first_name]</h1><p>Thanks for joining us.</p>" }}
-            {% if form.body_html.errors %}<p class="mt-1 text-xs text-red-600">{{ form.body_html.errors.0 }}</p>{% endif %}
-          </div>
-
-          <div>
-            <label for="id_body_text" class="block text-sm font-semibold text-slate-700 mb-2">Plain Text Body</label>
+            <label for="id_body_text" class="block text-sm font-semibold text-slate-700 mb-2">Message Body</label>
             {{ form.body_text|add_class:"auth-input min-h-40"|attr:"placeholder:Hello [first_name], thanks for joining us." }}
             {% if form.body_text.errors %}<p class="mt-1 text-xs text-red-600">{{ form.body_text.errors.0 }}</p>{% endif %}
+            <p class="mt-1.5 text-[10px] text-gray-400 font-medium">This text is converted to HTML automatically during send.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <aside class="space-y-6">
+    <aside class="space-y-6 xl:sticky xl:top-24">
       <!-- Delivery Settings -->
-      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6">
         <div class="flex items-center gap-3 mb-5">
           <div class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">3</div>
           <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Delivery Settings</h3>
@@ -106,7 +108,7 @@
       </div>
 
       <!-- AI Spam Analysis -->
-      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-[9px] italic">AI</div>
           <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Spam Analysis</h3>
@@ -133,14 +135,18 @@
       </div>
 
       <!-- Save Actions -->
-      <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-xl">
+      <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-[0_18px_40px_rgba(30,41,59,0.45)] border border-indigo-800/40">
         <h3 class="text-sm font-bold uppercase tracking-widest">Ready to Save</h3>
         <p class="text-xs text-slate-300 mt-2 leading-relaxed">Campaigns are saved as draft first so you can verify content before launching.</p>
 
         <div class="mt-6 flex flex-col gap-3">
-          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
+          <button type="submit" name="action" value="save_draft" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
             Save Draft Campaign
+          </button>
+          <button type="submit" name="action" value="send_now" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Send Campaign Now
           </button>
           <a href="{% url 'dashboard:dashboard' %}" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-800 transition-colors text-sm font-semibold">
             Cancel
@@ -154,11 +160,12 @@
 
 {% block extra_scripts %}
 <script>
+const textField = document.getElementById('id_body_text');
+
 document.getElementById('analyze-spam-btn').addEventListener('click', async function() {
     const subject = document.getElementById('id_subject')?.value || '';
-    const bodyHtml = document.getElementById('id_body_html')?.value || '';
     const bodyText = document.getElementById('id_body_text')?.value || '';
-    const content = subject + ' ' + bodyHtml + ' ' + bodyText;
+    const content = subject + ' ' + bodyText;
 
     if (content.trim().length < 10) {
         alert('Please write some content (subject + body) before analyzing.');

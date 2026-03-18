@@ -1,6 +1,57 @@
 {% extends "base.html" %}
 {% block title %}MailexaAI — AI-Powered Bulk Email Platform{% endblock %}
 {% block meta_description %}Send smarter emails with AI optimization. 98.7% inbox delivery rate. Join 12,000+ businesses.{% endblock %}
+{% block extra_head %}
+<style>
+  @keyframes demoFade {
+    0%, 23% { opacity: 1; transform: translateX(0); }
+    33%, 100% { opacity: 0; transform: translateX(8px); }
+  }
+
+  @keyframes demoDrift {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-3px) scale(1.003); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  .demo-scene {
+    position: relative;
+    height: 320px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgb(226 232 240);
+    background: linear-gradient(140deg, rgb(248 250 252), rgb(238 242 255));
+  }
+
+  .demo-slide {
+    position: absolute;
+    inset: 0;
+    padding: 20px;
+    animation: demoFade 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .demo-slide > div {
+    animation: demoDrift 1.4s infinite ease-in-out;
+    will-change: transform;
+  }
+
+  .demo-slide-2 { animation-delay: 1.33s; }
+  .demo-slide-3 { animation-delay: 2.66s; }
+  .demo-progress > span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: rgb(79 70 229);
+    transform-origin: left;
+    animation: demoProgress 4s infinite linear;
+  }
+
+  @keyframes demoProgress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+</style>
+{% endblock %}
 {% block content %}
 
   <section class="relative overflow-hidden bg-white py-24 sm:py-32">
@@ -20,11 +71,11 @@
         MailexaAI combines AI optimization with enterprise-grade infrastructure to ensure your emails reach the inbox — not the spam folder.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-        <a href="/accounts/register/" class="group inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3.5 rounded-lg shadow-lg hover:shadow-indigo-200 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+        <a href="{% url 'accounts:register' %}" class="group inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3.5 rounded-lg shadow-lg hover:shadow-indigo-200 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
           Start for free
           <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
-        <button class="inline-flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold px-8 py-3.5 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">View demo</button>
+        <button type="button" id="openDemoModal" class="inline-flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold px-8 py-3.5 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">View demo</button>
       </div>
       <p class="text-sm text-gray-400 mb-6">Free forever plan · No credit card · 5-minute setup</p>
     </div>
@@ -145,6 +196,143 @@
       </div>
     </div>
   </section>
+
+  <div id="demoModal" class="fixed inset-0 z-[80] hidden" aria-hidden="true">
+    <div id="demoBackdrop" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div class="relative min-h-full flex items-center justify-center p-4 sm:p-6">
+      <div class="w-full max-w-4xl rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+          <div>
+            <p class="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Product demo</p>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900">How MailexaAI works</h3>
+          </div>
+          <button type="button" id="closeDemoModal" class="w-9 h-9 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center justify-center" aria-label="Close demo">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="p-5 sm:p-6">
+          <div class="demo-scene">
+            <div class="demo-slide demo-slide-1">
+              <div class="h-full rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                  <p class="text-sm font-semibold text-slate-800">Dashboard Overview</p>
+                  <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Live</span>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                  <div class="rounded-lg bg-indigo-50 p-3">
+                    <p class="text-xs text-gray-500">Delivered</p>
+                    <p class="text-lg font-bold text-indigo-700">42.1K</p>
+                  </div>
+                  <div class="rounded-lg bg-slate-50 p-3">
+                    <p class="text-xs text-gray-500">Open Rate</p>
+                    <p class="text-lg font-bold text-slate-800">48.4%</p>
+                  </div>
+                  <div class="rounded-lg bg-slate-50 p-3">
+                    <p class="text-xs text-gray-500">Bounce</p>
+                    <p class="text-lg font-bold text-slate-800">1.2%</p>
+                  </div>
+                </div>
+                <div class="h-36 rounded-lg border border-slate-200 bg-gradient-to-r from-indigo-100 via-indigo-50 to-white relative overflow-hidden">
+                  <div class="absolute bottom-0 left-0 right-0 h-20 flex items-end gap-2 px-3 pb-3">
+                    <div class="w-1/6 h-8 bg-indigo-300 rounded-sm"></div>
+                    <div class="w-1/6 h-12 bg-indigo-400 rounded-sm"></div>
+                    <div class="w-1/6 h-10 bg-indigo-300 rounded-sm"></div>
+                    <div class="w-1/6 h-16 bg-indigo-500 rounded-sm"></div>
+                    <div class="w-1/6 h-11 bg-indigo-300 rounded-sm"></div>
+                    <div class="w-1/6 h-14 bg-indigo-400 rounded-sm"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo-slide demo-slide-2">
+              <div class="h-full rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                  <p class="text-sm font-semibold text-slate-800">Campaign Builder</p>
+                  <span class="text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md">AI assist</span>
+                </div>
+                <div class="rounded-lg border border-slate-200 p-3 mb-3">
+                  <p class="text-xs text-gray-500 mb-1">Subject</p>
+                  <p class="text-sm text-slate-800">Your weekly growth update is ready ✨</p>
+                </div>
+                <div class="rounded-lg border border-slate-200 p-3 mb-3">
+                  <p class="text-xs text-gray-500 mb-1">Audience</p>
+                  <p class="text-sm text-slate-800">Active users · Last 30 days · 14,820 contacts</p>
+                </div>
+                <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                  <p class="text-xs text-indigo-600 font-semibold mb-1">AI suggestion</p>
+                  <p class="text-sm text-indigo-800">Best send window: 10:30 AM – 11:15 AM for highest open rate.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo-slide demo-slide-3">
+              <div class="h-full rounded-xl bg-white border border-slate-200 p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                  <p class="text-sm font-semibold text-slate-800">Deliverability Intelligence</p>
+                  <span class="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-md">Score 92/100</span>
+                </div>
+                <div class="space-y-3">
+                  <div class="rounded-lg border border-slate-200 p-3 flex items-center justify-between">
+                    <p class="text-sm text-slate-700">SPF Alignment</p>
+                    <p class="text-sm font-semibold text-emerald-600">Passed</p>
+                  </div>
+                  <div class="rounded-lg border border-slate-200 p-3 flex items-center justify-between">
+                    <p class="text-sm text-slate-700">DKIM Validation</p>
+                    <p class="text-sm font-semibold text-emerald-600">Passed</p>
+                  </div>
+                  <div class="rounded-lg border border-slate-200 p-3 flex items-center justify-between">
+                    <p class="text-sm text-slate-700">Spam Trigger Risk</p>
+                    <p class="text-sm font-semibold text-amber-600">Low</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-progress mt-4 h-1 rounded-full bg-slate-200 overflow-hidden"><span></span></div>
+          <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p class="text-sm text-slate-500">Auto-playing product preview · 4-second loop</p>
+            <a href="{% url 'accounts:register' %}" class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg">Start for free</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const modal = document.getElementById('demoModal');
+      const openBtn = document.getElementById('openDemoModal');
+      const closeBtn = document.getElementById('closeDemoModal');
+      const backdrop = document.getElementById('demoBackdrop');
+
+      if (!modal || !openBtn || !closeBtn || !backdrop) return;
+
+      const openModal = function () {
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+      };
+
+      const closeModal = function () {
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+      };
+
+      openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
   
 
 {% endblock %}

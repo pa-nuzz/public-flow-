@@ -7,6 +7,7 @@ from apps.senders.forms import SenderForm
 from .forms import ProfileForm, ChangePasswordForm
 from django.db.models import Sum, Avg
 from django.utils import timezone
+from datetime import timedelta
 
 @login_required
 def dashboard_view(request):
@@ -19,18 +20,126 @@ def dashboard_view(request):
     avg_spam_score = user_campaigns.filter(spam_score__isnull=False).aggregate(Avg('spam_score'))['spam_score__avg']
     
     recent_campaigns = user_campaigns.select_related('sender').order_by('-created_at')[:5]
-    
-    context = {
-        'campaigns_count': user_campaigns.count(),
-        'sent_count': total_sent,
-        'avg_open_rate': avg_open_rate,
-        'avg_spam_score': round(avg_spam_score, 1) if avg_spam_score else None,
-        'senders_count': senders.count(),
-        'recent_campaigns': recent_campaigns,
-        'draft_count': user_campaigns.filter(status='draft').count(),
-        'active_count': user_campaigns.filter(status__in=['sending', 'scheduled']).count(),
+
+    status_style_map = {
+        'sent': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+        'scheduled': 'bg-indigo-50 text-indigo-600 border-indigo-200',
+        'sending': 'bg-amber-50 text-amber-700 border-amber-200',
+        'draft': 'bg-slate-100 text-slate-700 border-slate-200',
+        'failed': 'bg-red-50 text-red-700 border-red-200',
+        'paused': 'bg-slate-100 text-slate-700 border-slate-200',
     }
-    return render(request, "dashboard/home.html", context)
+
+    campaign_rows = []
+    for campaign in recent_campaigns:
+        campaign_rows.append(
+            {
+                'name': campaign.name,
+                'status': campaign.get_status_display(),
+                'status_style': status_style_map.get(campaign.status, status_style_map['draft']),
+                'recipients': f"{campaign.total_recipients:,}",
+                'open_rate': f"{campaign.open_rate}%" if campaign.sent_count > 0 else '—',
+                'date': campaign.created_at.strftime('%b %d, %Y'),
+            }
+        )
+
+    today = timezone.now().date()
+    sent_today = user_campaigns.filter(updated_at__date=today).aggregate(Sum('sent_count'))['sent_count__sum'] or 0
+    active_campaigns = user_campaigns.filter(status__in=['sending', 'scheduled']).count()
+
+    kpis = [
+        {
+            'label': 'Emails Sent Today',
+            'value': f"{sent_today:,}",
+            'change': 'Live',
+            'trend': 'up',
+            'icon_bg': 'bg-indigo-50 text-indigo-600',
+            'icon_svg': '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>',
+        },
+        {
+            'label': 'Open Rate',
+            'value': f"{avg_open_rate}%",
+            'change': 'Overall',
+            'trend': 'up',
+            'icon_bg': 'bg-emerald-50 text-emerald-600',
+            'icon_svg': '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="4 14 8 10 12 14 20 6"/></svg>',
+        },
+        {
+            'label': 'Spam Safety',
+            'value': f"{round(avg_spam_score, 1) if avg_spam_score else 0}/100",
+            'change': 'AI Score',
+            'trend': 'up' if (avg_spam_score or 0) >= 60 else 'down',
+            'icon_bg': 'bg-indigo-50 text-indigo-600',
+            'icon_svg': '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 5-3.5 9-7 9s-7-4-7-9V7l7-4z"/></svg>',
+        },
+        {
+            'label': 'Active Campaigns',
+            'value': str(active_campaigns),
+            'change': 'Current',
+            'trend': 'up',
+            'icon_bg': 'bg-emerald-50 text-emerald-600',
+            'icon_svg': '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+        },
+    ]
+
+    chart_data = []
+    max_sent = 1
+    max_open = 1
+    day_buckets = []
+    for offset in range(6, -1, -1):
+        day = today - timedelta(days=offset)
+        day_qs = user_campaigns.filter(created_at__date=day)
+        sent = day_qs.aggregate(Sum('sent_count'))['sent_count__sum'] or 0
+        opens = day_qs.aggregate(Sum('open_count'))['open_count__sum'] or 0
+        max_sent = max(max_sent, sent)
+        max_open = max(max_open, opens)
+        day_buckets.append((day, sent, opens))
+
+    for day, sent, opens in day_buckets:
+        chart_data.append(
+            {
+                'day': day.strftime('%a'),
+                'sent': sent,
+                'opens': opens,
+                'sent_pct': round((sent / max_sent) * 100) if max_sent else 0,
+                'opens_pct': round((opens / max_open) * 100) if max_open else 0,
+            }
+        )
+
+    weekly_stats = [
+        {
+            'label': 'Total Sent',
+            'value': f"{total_sent:,}",
+            'width': '100%',
+            'color': 'bg-indigo-500',
+        },
+        {
+            'label': 'Total Opened',
+            'value': f"{total_opens:,}",
+            'width': f"{int((total_opens / total_sent) * 100) if total_sent else 0}%",
+            'color': 'bg-emerald-400',
+        },
+        {
+            'label': 'Bounced',
+            'value': f"{(user_campaigns.aggregate(Sum('bounce_count'))['bounce_count__sum'] or 0):,}",
+            'width': f"{int(((user_campaigns.aggregate(Sum('bounce_count'))['bounce_count__sum'] or 0) / total_sent) * 100) if total_sent else 0}%",
+            'color': 'bg-rose-400',
+        },
+        {
+            'label': 'Senders',
+            'value': str(senders.count()),
+            'width': f"{min(100, senders.count() * 10)}%",
+            'color': 'bg-slate-400',
+        },
+    ]
+
+    context = {
+        'kpis': kpis,
+        'chart_data': chart_data,
+        'weekly_stats': weekly_stats,
+        'campaigns': campaign_rows,
+    }
+    return render(request, 'dashboard/home.html', context)
 
 
 @login_required
@@ -43,9 +152,6 @@ def settings_view(request):
 
         if action == 'add_sender':
             sender_form = SenderForm(request.POST)
-
-            if not sender_form.is_valid():
-                print(f"Form errors: {sender_form.errors}")  # Debug
 
             if sender_form.is_valid():
                 sender = sender_form.save(commit=False)
@@ -91,133 +197,3 @@ def profile_view(request):
         'profile_form': profile_form,
         'password_form': password_form,
     })
-
-kpis = [
-    {
-        "label": "Emails Sent Today",
-        "value": "48,291",
-        "change": "+12.4%",
-        "trend": "up",
-        "icon_bg": "bg-indigo-50 text-indigo-600",
-        "icon_svg": '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>',
-    },
-    {
-        "label": "Open Rate",
-        "value": "38.7%",
-        "change": "+2.1%",
-        "trend": "up",
-        "icon_bg": "bg-emerald-50 text-emerald-600",
-        "icon_svg": '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="4 14 8 10 12 14 20 6"/></svg>',
-    },
-    {
-        "label": "Click-Through Rate",
-        "value": "6.2%",
-        "change": "-0.4%",
-        "trend": "down",
-        "icon_bg": "bg-indigo-50 text-indigo-600",
-        "icon_svg": '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',
-    },
-    {
-        "label": "Active Campaigns",
-        "value": "14",
-        "change": "+3 this week",
-        "trend": "up",
-        "icon_bg": "bg-emerald-50 text-emerald-600",
-        "icon_svg": '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
-    },
-]
-
-
-chart_data = [
-    {"day": "Mon", "sent": 6000, "opens": 2200, "sent_pct": 60, "opens_pct": 25},
-    {"day": "Tue", "sent": 8500, "opens": 3000, "sent_pct": 80, "opens_pct": 35},
-    {"day": "Wed", "sent": 7200, "opens": 2800, "sent_pct": 70, "opens_pct": 30},
-    {"day": "Thu", "sent": 9100, "opens": 4200, "sent_pct": 90, "opens_pct": 45},
-    {"day": "Fri", "sent": 10400, "opens": 4600, "sent_pct": 100, "opens_pct": 50},
-    {"day": "Sat", "sent": 5400, "opens": 1900, "sent_pct": 50, "opens_pct": 20},
-    {"day": "Sun", "sent": 6100, "opens": 2100, "sent_pct": 55, "opens_pct": 22},
-]
-
-weekly_stats = [
-    {
-        "label": "Total Sent",
-        "value": "52,600",
-        "width": "100%",
-        "color": "bg-indigo-500",
-    },
-    {
-        "label": "Total Opened",
-        "value": "20,702",
-        "width": "40%",
-        "color": "bg-emerald-400",
-    },
-    {
-        "label": "Bounced",
-        "value": "312",
-        "width": "5%",
-        "color": "bg-rose-400",
-    },
-    {
-        "label": "Unsubscribed",
-        "value": "47",
-        "width": "2%",
-        "color": "bg-slate-400",
-    },
-]
-
-campaigns = [
-    {
-        "name": "Q4 Product Launch",
-        "status": "Sent",
-        "status_style": "bg-emerald-50 text-emerald-600 border-emerald-200",
-        "recipients": "12,400",
-        "open_rate": "41.2%",
-        "date": "Feb 16, 2025",
-    },
-    {
-        "name": "Weekly Newsletter #48",
-        "status": "Sent",
-        "status_style": "bg-emerald-50 text-emerald-600 border-emerald-200",
-        "recipients": "8,900",
-        "open_rate": "35.8%",
-        "date": "Feb 14, 2025",
-    },
-    {
-        "name": "Spring Promo",
-        "status": "Scheduled",
-        "status_style": "bg-indigo-50 text-indigo-600 border-indigo-200",
-        "recipients": "22,100",
-        "open_rate": "—",
-        "date": "Feb 20, 2025",
-    },
-    {
-        "name": "Re-engagement Flow",
-        "status": "Scheduled",
-        "status_style": "bg-indigo-50 text-indigo-600 border-indigo-200",
-        "recipients": "22,100",
-        "open_rate": "—",
-        "date": "Feb 20, 2025",
-    },
-    {
-        "name": "Onboarding Series v3",
-        "status": "Scheduled",
-        "status_style": "bg-indigo-50 text-indigo-600 border-indigo-200",
-        "recipients": "22,100",
-        "open_rate": "—",
-        "date": "Feb 20, 2025",
-    },
-]
-
-from django.shortcuts import render
-
-def dashboard_view(request):
-
-    # paste all lists here
-    context = {
-        "kpis": kpis,
-        "chart_data": chart_data,
-        "weekly_stats": weekly_stats,
-        "campaigns": campaigns,
-    }
-
-    return render(request, "dashboard/home.html", context)

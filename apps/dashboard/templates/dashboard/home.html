@@ -119,13 +119,18 @@
 </div>
 <script>
   document.querySelectorAll('.js-bar-height').forEach((el) => {
-    const value = Number(el.dataset.height || 0);
-    el.style.height = `${value}%`;
+    const value = parseFloat(el.dataset.height || '0');
+    el.style.height = `${Number.isFinite(value) ? value : 0}%`;
   });
 
   document.querySelectorAll('.js-progress-width').forEach((el) => {
-    const value = Number(el.dataset.width || 0);
-    el.style.width = `${value}%`;
+    const raw = (el.dataset.width || '0').trim();
+    if (raw.endsWith('%')) {
+      el.style.width = raw;
+      return;
+    }
+    const value = parseFloat(raw);
+    el.style.width = `${Number.isFinite(value) ? value : 0}%`;
   });
 </script>
 {% endblock %}

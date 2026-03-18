@@ -3,25 +3,40 @@ import pickle
 import logging
 from django.conf import settings
 
-MODEL_PATH = getattr(settings, 'ML_MODEL_PATH', os.path.join(settings.BASE_DIR, 'ml_models', 'spam_model.pkl'))
-VECTORIZER_PATH = os.path.join(os.path.dirname(MODEL_PATH), 'tfidf_vectorizer.pkl')
+MODEL_PATH = str(getattr(settings, 'ML_MODEL_PATH', os.path.join(settings.BASE_DIR, 'Data', 'spam_model.pkl')))
+VECTORIZER_PATH = str(getattr(settings, 'ML_VECTORIZER_PATH', os.path.join(settings.BASE_DIR, 'Data', 'tfidf_vectorizer.pkl')))
 
 _model = None
 _vectorizer = None
 logger = logging.getLogger(__name__)
 
+
+def _candidate_paths():
+    base = str(settings.BASE_DIR)
+    return [
+        (MODEL_PATH, VECTORIZER_PATH),
+        (os.path.join(base, 'ml_models', 'spam_model.pkl'), os.path.join(base, 'ml_models', 'tfidf_vectorizer.pkl')),
+        (os.path.join(base, 'Data', 'spam_model.pkl'), os.path.join(base, 'Data', 'tfidf_vectorizer.pkl')),
+        (os.path.join(base, 'notebooks', 'spam_model.pkl'), os.path.join(base, 'notebooks', 'tfidf_vectorizer.pkl')),
+    ]
+
 def get_model_and_vectorizer():
     global _model, _vectorizer
     if _model is None or _vectorizer is None:
         try:
-            if os.path.exists(MODEL_PATH) and os.path.exists(VECTORIZER_PATH):
-                with open(MODEL_PATH, 'rb') as f:
-                    _model = pickle.load(f)
-                with open(VECTORIZER_PATH, 'rb') as f:
-                    _vectorizer = pickle.load(f)
-        except (OSError, pickle.UnpicklingError) as e:
+            for model_path, vectorizer_path in _candidate_paths():
+                if os.path.exists(model_path) and os.path.exists(vectorizer_path):
+                    with open(model_path, 'rb') as f:
+                        _model = pickle.load(f)
+                    with open(vectorizer_path, 'rb') as f:
+                        _vectorizer = pickle.load(f)
+                    logger.info(f"Loaded ML model from {model_path} and vectorizer from {vectorizer_path}")
+                    break
+        except Exception as e:
             logger.error(f"Failed to load ML models: {e}")
             _model, _vectorizer = "heuristic", "heuristic"
+    if _model is None or _vectorizer is None:
+        _model, _vectorizer = "heuristic", "heuristic"
     return _model, _vectorizer
 
 def predict_spam_score(text):

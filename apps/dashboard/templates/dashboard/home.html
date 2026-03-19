@@ -4,9 +4,9 @@
 {% block content %}
 <div class="page-shell max-w-none reveal-on-scroll">
   <!-- KPI CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 stagger-children">
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 stagger-children">
     {% for kpi in kpis %}
-    <div class="premium-surface card-elevate rounded-xl p-5 reveal-up delay-1">
+    <div class="premium-surface card-elevate rounded-2xl p-6 reveal-up delay-1">
       <div class="flex items-start justify-between mb-4">
         <div class="w-9 h-9 {{ kpi.icon_bg }} rounded-lg flex items-center justify-center">
           {{ kpi.icon_svg|safe }}
@@ -26,9 +26,9 @@
     {% endfor %}
   </div>
   <!-- CHART + QUICK STATS -->
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 reveal-on-scroll">
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 reveal-on-scroll">
     <!-- Bar chart -->
-    <div class="xl:col-span-2 premium-surface card-elevate rounded-xl p-6 reveal-up delay-2">
+    <div class="xl:col-span-2 premium-surface card-elevate section-card reveal-up delay-2">
       <div class="flex items-center justify-between mb-6">
         <div>
           <h2 class="card-title">Performance — Last 7 Days</h2>
@@ -52,7 +52,7 @@
       </div>
     </div>
     <!-- Quick stats sidebar -->
-    <div class="premium-surface card-elevate rounded-xl p-6 reveal-up delay-2 flex flex-col gap-5">
+    <div class="premium-surface card-elevate section-card reveal-up delay-2 flex flex-col gap-5">
       <h2 class="card-title">This Week</h2>
       {% for s in weekly_stats %}
       <div>
@@ -82,8 +82,8 @@
     </div>
   </div>
   <!-- RECENT CAMPAIGNS TABLE -->
-  <div class="premium-surface card-elevate rounded-xl reveal-on-scroll overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+  <div class="premium-surface card-elevate rounded-2xl reveal-on-scroll overflow-hidden">
+    <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
       <h2 class="card-title">Recent Campaigns</h2>
       <a href="{% url 'campaigns:campaign_list' %}" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors">
         View all

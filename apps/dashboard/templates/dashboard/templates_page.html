@@ -6,8 +6,10 @@
 {% block content %}
 <div class="page-shell max-w-none space-y-5">
   <!-- Header -->
-  <div class="flex items-center justify-between">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
+      <h2 class="page-title">Templates</h2>
+      <p class="page-subtitle">Reuse and manage high-performing email templates.</p>
       <p class="text-sm text-gray-500">{{ templates|length }} templates available</p>
     </div>
     <a href="{% url 'new_template' %}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-indigo-200 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
@@ -17,9 +19,9 @@
   </div>
 
   <!-- Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
     <!-- Add new card -->
-    <button class="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 p-10 transition-all duration-200 group min-h-[220px]">
+    <button class="premium-surface card-elevate flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 p-10 transition-all duration-200 group min-h-[220px]">
       <div class="w-10 h-10 rounded-xl bg-indigo-50 group-hover:bg-indigo-100 flex items-center justify-center transition-colors">
         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </div>
@@ -31,7 +33,7 @@
 
     <!-- Template cards -->
     {% for t in templates %}
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col group">
+    <div class="premium-surface card-elevate rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col group">
       <!-- Preview area -->
       <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-100 px-5 pt-5 pb-4 flex-1">
         <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4">

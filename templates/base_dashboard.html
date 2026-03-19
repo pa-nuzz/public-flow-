@@ -61,13 +61,9 @@
           <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           Dashboard
         </a>
-        <a href="{% url 'campaigns:campaign_create' %}" class="sidebar-link {% if request.resolver_match.namespace == 'campaigns' %}active{% endif %}">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
-          Campaigns
-        </a>
-        <a href="{% url 'campaigns:campaign_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'campaign_list' %}active{% endif %}">
+        <a href="{% url 'campaigns:campaign_list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'campaigns' %}active{% endif %}">
           <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          Campaign View
+          Campaign
         </a>
         <a href="#" class="sidebar-link">
           <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -108,7 +104,7 @@
     <!-- Main Content Area -->
     <div class="flex-grow lg:ml-72 flex flex-col min-h-screen">
       <!-- Header -->
-      <header class="h-20 premium-surface border-b border-indigo-100/60 flex items-center justify-between px-10 sticky top-0 z-20">
+      <header class="h-20 premium-surface border-b border-indigo-100/60 flex items-center justify-between px-4 sm:px-6 lg:px-10 sticky top-0 z-20">
         <div>
           <h1 class="font-extrabold text-2xl text-slate-900 tracking-tight">{% block page_title %}Dashboard{% endblock %}</h1>
           <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mt-0.5">Welcome back, {{ user.first_name }}</p>
@@ -116,39 +112,44 @@
         
         <div class="flex items-center gap-6">
           <!-- Notification Bell -->
-          <div class="relative" id="notif-wrapper">
+          <div class="relative" id="notif-wrapper" data-clear-url="{% url 'dashboard:clear_notifications' %}">
             <button onclick="toggleNotifications()" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-primary-light rounded-xl transition-all relative hover-scale-soft">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-              <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
+              <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white {% if dashboard_notification_count == 0 %}hidden{% endif %}"></span>
             </button>
 
             <!-- Notification Dropdown -->
-            <div id="notif-dropdown" class="hidden absolute right-0 top-14 w-80 premium-surface rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+            <div id="notif-dropdown" class="hidden absolute right-0 top-14 w-[22rem] max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
               <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
                 <h4 class="text-sm font-bold text-slate-900">Notifications</h4>
                 <button onclick="clearNotifications()" class="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">Clear all</button>
               </div>
-              <div id="notif-list" class="max-h-72 overflow-y-auto divide-y divide-gray-50">
-                <div class="px-5 py-4 hover:bg-gray-50/50 transition-colors flex gap-3">
-                  <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex-shrink-0 flex items-center justify-center">
+              <div id="notif-list" class="max-h-96 overflow-y-auto divide-y divide-gray-50 pr-1 {% if dashboard_notification_count == 0 %}hidden{% endif %}">
+                {% for notification in dashboard_notifications %}
+                <a href="{{ notification.url }}" class="px-5 py-4 hover:bg-gray-50/50 transition-colors flex gap-3 group">
+                  <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center
+                    {% if notification.tone == 'success' %}bg-emerald-50 text-emerald-600
+                    {% elif notification.tone == 'warning' %}bg-amber-50 text-amber-600
+                    {% elif notification.tone == 'danger' %}bg-red-50 text-red-600
+                    {% else %}bg-primary-light text-primary{% endif %}">
+                    {% if notification.tone == 'success' %}
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-slate-800">Welcome to Mailexa AI!</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Get started by connecting an SMTP sender.</p>
-                  </div>
-                </div>
-                <div class="px-5 py-4 hover:bg-gray-50/50 transition-colors flex gap-3">
-                  <div class="w-8 h-8 bg-primary-light text-primary rounded-lg flex-shrink-0 flex items-center justify-center">
+                    {% elif notification.tone == 'warning' %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    {% elif notification.tone == 'danger' %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M4.93 19h14.14c1.54 0 2.502-1.667 1.732-3L13.73 4c-.77-1.333-2.694-1.333-3.464 0L3.2 16c-.77 1.333.192 3 1.73 3z"/></svg>
+                    {% else %}
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% endif %}
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-slate-800">AI Spam Guard ready</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Analyze subjects before sending campaigns.</p>
+                    <p class="text-sm font-semibold text-slate-800 group-hover:text-primary transition-colors">{{ notification.title }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ notification.message }}</p>
                   </div>
-                </div>
+                </a>
+                {% endfor %}
               </div>
-              <div id="notif-empty" class="hidden px-5 py-8 text-center">
+              <div id="notif-empty" class="px-5 py-8 text-center {% if dashboard_notification_count > 0 %}hidden{% endif %}">
                 <p class="text-sm text-gray-400">All caught up!</p>
               </div>
             </div>
@@ -196,13 +197,13 @@
       </div>
       {% endif %}
 
-      <main class="p-10 flex-grow max-w-[1600px] relative">
+      <main class="p-4 sm:p-6 lg:p-10 flex-grow max-w-[1600px] relative">
         <div class="pointer-events-none absolute -top-12 -right-12 w-56 h-56 bg-indigo-400/10 rounded-full blur-3xl"></div>
         <div class="pointer-events-none absolute top-1/3 -left-20 w-64 h-64 bg-purple-300/10 rounded-full blur-3xl"></div>
         <div class="reveal-on-scroll">{% block content %}{% endblock %}</div>
       </main>
 
-      <footer class="mt-auto px-10 py-6 bg-white border-t border-gray-100 flex justify-between items-center text-xs text-gray-400 font-medium">
+      <footer class="mt-auto px-4 sm:px-6 lg:px-10 py-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between sm:items-center text-xs text-gray-400 font-medium">
         <p>&copy; {% now "Y" %} Mailexa AI. High-Deliverability Command Center.</p>
         <div class="flex gap-6">
           <a href="#" class="hover:text-primary transition-colors">Documentation</a>
@@ -230,10 +231,35 @@
         dd.classList.toggle('hidden');
       }
 
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
       function clearNotifications() {
-        document.getElementById('notif-list').innerHTML = '';
-        document.getElementById('notif-empty').classList.remove('hidden');
-        document.getElementById('notif-badge').classList.add('hidden');
+        const wrapper = document.getElementById('notif-wrapper');
+        const clearUrl = wrapper ? wrapper.dataset.clearUrl : null;
+        if (!clearUrl) return;
+
+        fetch(clearUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        }).then(function(response) {
+          if (!response.ok) return;
+          const list = document.getElementById('notif-list');
+          if (list) {
+            list.innerHTML = '';
+            list.classList.add('hidden');
+          }
+          const empty = document.getElementById('notif-empty');
+          if (empty) empty.classList.remove('hidden');
+          const badge = document.getElementById('notif-badge');
+          if (badge) badge.classList.add('hidden');
+        });
       }
 
       // Close dropdown when clicking outside

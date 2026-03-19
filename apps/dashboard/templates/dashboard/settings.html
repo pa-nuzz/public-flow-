@@ -3,164 +3,160 @@
 {% block page_title %}SMTP Senders{% endblock %}
 {% block content %}
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+<div class="page-shell">
+  {% load widget_tweaks %}
 
-  <!-- Add Sender Form -->
-  <div class="lg:col-span-1 space-y-6">
-    <div class="bg-white shadow-sm rounded-2xl p-8 border border-gray-100">
-      <div class="mb-8">
-        <h2 class="text-xl font-extrabold text-[#0F1117] tracking-tight">Connect Sender</h2>
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Configure SMTP Outbound</p>
-      </div>
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="page-title">SMTP Senders</h2>
+      <p class="page-subtitle">Manage sender identities, security, and sending limits.</p>
+    </div>
+    <div class="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      Stable
+    </div>
+  </div>
 
-      <form method="post" class="space-y-5">
-        {% csrf_token %}
-        {% load widget_tweaks %}
-        <input type="hidden" name="action" value="add_sender">
-
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">Display Name</label>
-          {{ sender_form.display_name|add_class:"auth-input"|attr:"placeholder:e.g. Outreach Team" }}
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <div class="xl:col-span-5">
+      <div class="premium-surface card-elevate section-card">
+        <div class="section-head">
+          <h2 class="section-title">Connect Sender</h2>
+          <p class="section-subtitle">Configure SMTP Outbound</p>
         </div>
 
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">From Email</label>
-          {{ sender_form.from_email|add_class:"auth-input"|attr:"placeholder:hello@company.com" }}
-        </div>
+        <form method="post" class="space-y-5">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_sender">
 
-        <div class="grid grid-cols-2 gap-4">
-          <div class="col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-2">SMTP Provider</label>
-            {{ sender_form.provider|add_class:"auth-input" }}
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Display Name</label>
+            {{ sender_form.display_name|add_class:"auth-input"|attr:"placeholder:e.g. Outreach Team" }}
           </div>
-          <div class="col-span-1">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Host</label>
-            {{ sender_form.smtp_host|add_class:"auth-input"|attr:"placeholder:smtp.gmail.com" }}
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">From Email</label>
+            {{ sender_form.from_email|add_class:"auth-input"|attr:"placeholder:hello@company.com" }}
           </div>
-          <div class="col-span-1">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Port</label>
-            {{ sender_form.smtp_port|add_class:"auth-input"|attr:"placeholder:587" }}
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="block text-sm font-bold text-gray-700 mb-2">SMTP Provider</label>
+              {{ sender_form.provider|add_class:"auth-input" }}
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Host</label>
+              {{ sender_form.smtp_host|add_class:"auth-input"|attr:"placeholder:smtp.gmail.com" }}
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Port</label>
+              {{ sender_form.smtp_port|add_class:"auth-input"|attr:"placeholder:587" }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">SMTP Username</label>
-          {{ sender_form.username|add_class:"auth-input"|attr:"placeholder:username or email" }}
-        </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">SMTP Username</label>
+            {{ sender_form.username|add_class:"auth-input"|attr:"placeholder:username or email" }}
+          </div>
 
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">App Password</label>
-          {{ sender_form.smtp_password|add_class:"auth-input"|attr:"placeholder:••••••••••••••••" }}
-          <p class="text-[10px] text-gray-400 mt-2 font-medium">Use an App Password if using 2FA (Gmail/Outlook).</p>
-        </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">App Password</label>
+            {{ sender_form.smtp_password|add_class:"auth-input"|attr:"placeholder:••••••••••••••••" }}
+            <p class="text-[10px] text-gray-400 mt-2 font-medium">Use an App Password if using 2FA (Gmail/Outlook).</p>
+          </div>
 
-        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-        {{ sender_form.use_tls|add_class:"w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" }}
-        <label class="text-sm font-semibold text-gray-700">Enable TLS encryption</label>
-      </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Daily Send Limit</label>
+              {{ sender_form.daily_limit|add_class:"auth-input"|attr:"placeholder:500" }}
+            </div>
+            <label class="w-full flex items-center gap-3 p-3 rounded-xl border border-indigo-100 bg-indigo-50/50 text-sm font-semibold text-slate-700">
+              {{ sender_form.use_tls|add_class:"w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" }}
+              Enable TLS encryption
+            </label>
+          </div>
 
-      <!-- Add this new field -->
-      <div class="mt-4">
-        <label class="block text-sm font-bold text-gray-700 mb-2">Daily Send Limit</label>
-        {{ sender_form.daily_limit|add_class:"auth-input"|attr:"placeholder:100" }}
-        <p class="text-[10px] text-gray-400 mt-2 font-medium">Maximum emails per day from this sender</p>
-      </div>
-
-        <div class="pt-4 space-y-3">
           <button type="submit" class="btn-primary w-full justify-center shadow-lg shadow-indigo-500/20">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Save Sender Configuration
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
 
-    <!-- Quick Help Card -->
-    <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-xl">
-      <div class="flex items-center gap-2 mb-3">
-        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <h4 class="text-sm font-bold">Quick Setup Guide</h4>
-      </div>
-      <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
-        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold mt-px">1.</span> Enter your SMTP host and port</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold mt-px">2.</span> Use an App Password for Gmail/Outlook 2FA</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold mt-px">3.</span> Keep TLS enabled for secure delivery</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Connected Senders List -->
-  <div class="lg:col-span-2 space-y-6">
-    <div class="bg-white shadow-sm rounded-2xl border border-gray-100 overflow-hidden">
-      <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
-        <div>
-          <h2 class="text-xl font-extrabold text-[#0F1117] tracking-tight">Connected Accounts</h2>
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{{ senders|length }} sender{{ senders|length|pluralize }} configured</p>
+    <div class="xl:col-span-7 space-y-6">
+      <div class="premium-surface rounded-2xl border border-gray-100 p-6">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h3 class="card-title">SMTP Best Practices</h3>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">System Online</span>
-        </div>
+        <ul class="text-sm text-slate-600 space-y-2 leading-relaxed">
+          <li>Use an App Password for Gmail/Outlook accounts with 2FA.</li>
+          <li>Keep TLS enabled for secure and stable deliverability.</li>
+          <li>Set realistic daily limits to protect sender reputation.</li>
+        </ul>
       </div>
 
-      <div class="p-0">
+      <div class="premium-surface card-elevate rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+          <div>
+            <h2 class="section-title">Connected Accounts</h2>
+            <p class="section-subtitle">{{ senders|length }} sender{{ senders|length|pluralize }} configured</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">System Online</span>
+          </div>
+        </div>
+
         {% if senders %}
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="bg-gray-50/50">
-                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Sender Profile</th>
-                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Configuration</th>
-                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Status</th>
-                <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              {% for s in senders %}
-              <tr class="hover:bg-gray-50/30 transition-colors group">
-                <td class="px-8 py-5">
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-primary-light text-primary rounded-lg flex items-center justify-center font-bold text-sm">{{ s.display_name|first|upper }}</div>
-                    <div>
-                      <div class="font-bold text-slate-900">{{ s.display_name }}</div>
-                      <div class="text-xs text-gray-500 font-medium">{{ s.from_email }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-8 py-5">
-                  <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold uppercase">{{ s.provider|title }}</span>
-                    <span class="text-xs text-gray-400 font-mono">{{ s.smtp_host }}:{{ s.smtp_port }}</span>
-                  </div>
-                  <div class="text-[10px] text-gray-400 mt-1">{% if s.use_tls %}TLS Enabled{% else %}No TLS{% endif %} &middot; Limit {{ s.daily_limit }}/day</div>
-                </td>
-                <td class="px-8 py-5">
-                  {% if s.is_active %}
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Active
-                  </span>
-                  {% else %}
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
-                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                    Inactive
-                  </span>
-                  {% endif %}
-                </td>
-                <td class="px-8 py-5 text-right">
-                  <form action="{% url 'dashboard:settings' %}" method="post" class="inline">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete_sender">
-                    <input type="hidden" name="sender_id" value="{{ s.id }}">
-                    <button type="submit" onclick="return confirm('Disconnect this sender? Campaigns using it will need a new sender.')" class="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div class="p-6 grid grid-cols-1 gap-4">
+          {% for s in senders %}
+          <div class="rounded-2xl border border-gray-100 bg-white p-5 hover:border-indigo-200 hover:shadow-md transition-all">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex items-start gap-3 min-w-0">
+                <div class="w-10 h-10 bg-primary-light text-primary rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-indigo-100">{{ s.display_name|first|upper }}</div>
+                <div class="min-w-0">
+                  <p class="font-bold text-slate-900 truncate">{{ s.display_name }}</p>
+                  <p class="text-sm text-gray-500 truncate">{{ s.from_email }}</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                {% if s.is_active %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Active
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                  Inactive
+                </span>
+                {% endif %}
+                <form action="{% url 'dashboard:settings' %}" method="post" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_sender">
+                  <input type="hidden" name="sender_id" value="{{ s.id }}">
+                  <button type="submit" onclick="return confirm('Disconnect this sender? Campaigns using it will need a new sender.')" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+              <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[11px] font-bold uppercase">{{ s.provider|title }}</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-semibold">{{ s.smtp_host }}:{{ s.smtp_port }}</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-semibold">Limit {{ s.daily_limit }}/day</span>
+              {% if s.use_tls %}
+              <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs font-semibold">TLS Enabled</span>
+              {% else %}
+              <span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs font-semibold">TLS Disabled</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
         </div>
         {% else %}
         <div class="px-8 py-16 text-center">

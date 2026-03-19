@@ -5,18 +5,18 @@
 {% block page_title %}Create Campaign{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="page-shell max-w-none">
   <form method="post" id="campaign-form" class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
     {% csrf_token %}
 
     <section class="xl:col-span-2 space-y-6">
       <!-- Step 1: Campaign Identity -->
-      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6 md:p-8">
+      <div class="premium-surface card-elevate section-card">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">1</div>
           <div>
-            <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Campaign Identity</h2>
-            <p class="text-xs text-gray-500 uppercase tracking-wider mt-0.5">How your campaign will appear</p>
+            <h2 class="section-title">Campaign Identity</h2>
+            <p class="section-subtitle">How your campaign will appear</p>
           </div>
         </div>
 
@@ -62,12 +62,12 @@
       </div>
 
       <!-- Step 2: Message Content -->
-      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6 md:p-8">
+      <div class="premium-surface card-elevate section-card">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">2</div>
           <div>
-            <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Message Content</h2>
-            <p class="text-xs text-gray-500 uppercase tracking-wider mt-0.5">Write your message in plain text</p>
+            <h2 class="section-title">Message Content</h2>
+            <p class="section-subtitle">Write your message in plain text</p>
           </div>
         </div>
 
@@ -84,7 +84,7 @@
 
     <aside class="space-y-6 xl:sticky xl:top-24">
       <!-- Delivery Settings -->
-      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6">
+      <div class="premium-surface card-elevate section-card">
         <div class="flex items-center gap-3 mb-5">
           <div class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">3</div>
           <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Delivery Settings</h3>
@@ -108,7 +108,7 @@
       </div>
 
       <!-- AI Spam Analysis -->
-      <div class="bg-white/90 backdrop-blur-sm border border-indigo-100/60 rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.07)] p-6">
+      <div class="premium-surface card-elevate section-card">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-[9px] italic">AI</div>
           <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Spam Analysis</h3>

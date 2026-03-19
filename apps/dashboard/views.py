@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from apps.senders.models import Sender
-from apps.campaigns.models import Campaign
+from apps.campaigns.models import Campaign, EmailEngagement
 from apps.senders.forms import SenderForm
 from .forms import ProfileForm, ChangePasswordForm
 from django.db.models import Sum, Avg
 from django.db import IntegrityError
 from django.utils import timezone
 from datetime import timedelta
+from django.http import JsonResponse
 
 @login_required
 def dashboard_view(request):
@@ -45,6 +46,20 @@ def dashboard_view(request):
         )
 
     today = timezone.now().date()
+    week_start = today - timedelta(days=6)
+
+    weekly_campaigns = user_campaigns.filter(updated_at__date__gte=week_start, updated_at__date__lte=today)
+    weekly_engagements = EmailEngagement.objects.filter(
+        campaign__user=request.user,
+        sent_at__date__gte=week_start,
+        sent_at__date__lte=today,
+    )
+
+    weekly_sent = weekly_campaigns.aggregate(Sum('sent_count'))['sent_count__sum'] or 0
+    weekly_bounced = weekly_campaigns.aggregate(Sum('bounce_count'))['bounce_count__sum'] or 0
+    weekly_opened = weekly_engagements.filter(opened_at__isnull=False).count()
+    weekly_clicked = weekly_engagements.filter(clicked_at__isnull=False).count()
+
     sent_today = user_campaigns.filter(updated_at__date=today).aggregate(Sum('sent_count'))['sent_count__sum'] or 0
     active_campaigns = user_campaigns.filter(status__in=['sending', 'scheduled']).count()
 
@@ -91,7 +106,10 @@ def dashboard_view(request):
         day = today - timedelta(days=offset)
         day_qs = user_campaigns.filter(created_at__date=day)
         sent = day_qs.aggregate(Sum('sent_count'))['sent_count__sum'] or 0
-        opens = day_qs.aggregate(Sum('open_count'))['open_count__sum'] or 0
+        opens = EmailEngagement.objects.filter(
+            campaign__user=request.user,
+            opened_at__date=day,
+        ).count()
         max_sent = max(max_sent, sent)
         max_open = max(max_open, opens)
         day_buckets.append((day, sent, opens))
@@ -107,29 +125,32 @@ def dashboard_view(request):
             }
         )
 
+    max_weekly_value = max(weekly_sent, weekly_opened, weekly_bounced, senders.count(), weekly_clicked, 1)
+    deliverability_rate = round(((weekly_sent - weekly_bounced) / weekly_sent) * 100, 1) if weekly_sent else 0.0
+
     weekly_stats = [
         {
             'label': 'Total Sent',
-            'value': f"{total_sent:,}",
-            'width': '100%',
+            'value': f"{weekly_sent:,}",
+            'width': f"{int((weekly_sent / max_weekly_value) * 100)}%",
             'color': 'bg-indigo-500',
         },
         {
             'label': 'Total Opened',
-            'value': f"{total_opens:,}",
-            'width': f"{int((total_opens / total_sent) * 100) if total_sent else 0}%",
+            'value': f"{weekly_opened:,}",
+            'width': f"{int((weekly_opened / max_weekly_value) * 100)}%",
             'color': 'bg-emerald-400',
         },
         {
             'label': 'Bounced',
-            'value': f"{(user_campaigns.aggregate(Sum('bounce_count'))['bounce_count__sum'] or 0):,}",
-            'width': f"{int(((user_campaigns.aggregate(Sum('bounce_count'))['bounce_count__sum'] or 0) / total_sent) * 100) if total_sent else 0}%",
+            'value': f"{weekly_bounced:,}",
+            'width': f"{int((weekly_bounced / max_weekly_value) * 100)}%",
             'color': 'bg-rose-400',
         },
         {
             'label': 'Senders',
             'value': str(senders.count()),
-            'width': f"{min(100, senders.count() * 10)}%",
+            'width': f"{int((senders.count() / max_weekly_value) * 100)}%",
             'color': 'bg-slate-400',
         },
     ]
@@ -139,6 +160,9 @@ def dashboard_view(request):
         'chart_data': chart_data,
         'weekly_stats': weekly_stats,
         'campaigns': campaign_rows,
+        'inbox_rate': deliverability_rate,
+        'weekly_clicked': weekly_clicked,
+        'weekly_clicked_width': int((weekly_clicked / max_weekly_value) * 100) if max_weekly_value else 0,
     }
     return render(request, 'dashboard/home.html', context)
 
@@ -229,3 +253,13 @@ def profile_view(request):
         'profile_form': profile_form,
         'password_form': password_form,
     })
+
+
+@login_required
+def clear_notifications_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+
+    request.session['dashboard_notifications_dismissed_at'] = timezone.now().isoformat()
+    request.session.modified = True
+    return JsonResponse({'ok': True})

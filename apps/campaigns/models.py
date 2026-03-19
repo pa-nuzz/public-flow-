@@ -68,3 +68,25 @@ class Campaign(models.Model):
             if email not in recipients:
                 recipients.append(email)
         return recipients
+
+
+class EmailEngagement(models.Model):
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='engagements')
+    recipient_email = models.EmailField()
+    tracking_token = models.CharField(max_length=64, unique=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    opened_at = models.DateTimeField(null=True, blank=True)
+    clicked_at = models.DateTimeField(null=True, blank=True)
+    open_count = models.PositiveIntegerField(default=0)
+    click_count = models.PositiveIntegerField(default=0)
+    last_event_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['tracking_token']),
+            models.Index(fields=['campaign', 'recipient_email']),
+            models.Index(fields=['sent_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.recipient_email} - {self.campaign.name}"

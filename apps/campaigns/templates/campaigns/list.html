@@ -1,14 +1,14 @@
 {% extends 'base_dashboard.html' %}
 
-{% block title %}Campaigns — Mailexa AI{% endblock %}
-{% block page_title %}Campaigns{% endblock %}
+{% block title %}Campaign — Mailexa AI{% endblock %}
+{% block page_title %}Campaign{% endblock %}
 
 {% block content %}
-<div class="space-y-6 reveal-on-scroll">
+<div class="page-shell reveal-on-scroll">
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h2 class="text-xl font-bold text-slate-900">All Campaigns</h2>
-      <p class="text-sm text-gray-500">Track drafts, scheduled sends, and delivery results.</p>
+      <h2 class="page-title">Campaign</h2>
+      <p class="page-subtitle">Track drafts, scheduled sends, and delivery results.</p>
     </div>
     <a href="{% url 'campaigns:campaign_create' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -66,6 +66,10 @@
                   <button type="submit" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover">Send</button>
                 </form>
                 {% endif %}
+                <form method="post" action="{% url 'campaigns:campaign_delete' campaign.id %}" onsubmit="return confirm('Delete this campaign? This action cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-red-50 text-xs font-semibold hover:bg-red-100 hover:border-red-300">Delete</button>
+                </form>
               </div>
             </td>
           </tr>

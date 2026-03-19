@@ -34,6 +34,24 @@ body {
   color: var(--text-primary);
 }
 
+button,
+[role="button"],
+input,
+select,
+textarea,
+a {
+  transition: all 0.2s ease;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(91, 76, 245, 0.45);
+  outline-offset: 2px;
+}
+
 /* Premium Utilities */
 .glass {
   background: rgba(255, 255, 255, 0.7);
@@ -217,6 +235,13 @@ tbody tr {
   -webkit-backdrop-filter: blur(8px);
 }
 
+.panel-soft {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px -24px rgba(15, 23, 42, 0.35);
+}
+
 .card-elevate {
   transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
@@ -286,6 +311,78 @@ tbody tr {
 
 .btn-premium:hover::after {
   transform: translateX(120%);
+}
+
+.page-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.section-card {
+  border-radius: 1rem;
+  padding: 2rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.section-head {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.section-subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #94a3b8;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.page-subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.card-title {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.meta-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+@media (max-width: 1024px) {
+  .page-shell { gap: 1.25rem; }
+  .section-card { padding: 1.25rem; }
+  .page-title { font-size: 1.25rem; line-height: 1.75rem; }
 }
 
 @keyframes reveal-up {

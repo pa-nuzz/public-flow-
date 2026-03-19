@@ -1,3 +1,10 @@
+"""ML model loading and spam score prediction.
+
+Handles loading pre-trained TF-IDF vectorizer and scikit-learn spam classifier.
+Implements fallback heuristic-based spam detection when ML models are unavailable.
+Functions are thread-safe with mutex-protected lazy loading.
+"""
+
 import os
 import pickle
 import logging
@@ -106,26 +113,31 @@ def get_model_and_vectorizer():
 def predict_spam_score(text):
     """
     Predicts the spam score using the loaded TF-IDF vectorizer and scikit-learn model.
-    Returns a score out of 100 representing the probability of being spam.
+    Falls back to heuristic-based detection if ML model is unavailable.
+    
+    Args:
+        text (str): Email text to analyze for spam indicators.
+    
+    Returns:
+        float: Spam score from 0-100 (higher = more likely spam).
     """
     model, vectorizer = get_model_and_vectorizer()
 
-    # Only use ML path when both objects are real model/vectorizer instances.
-    use_ml_path = (
-        model is not None
-        and vectorizer is not None
-        and not isinstance(model, str)
-        and not isinstance(vectorizer, str)
-    )
+    # Only use ML path when both objects are real model/vectorizer instances (not fallback strings).
+    # Explicitly check that neither is the "heuristic" fallback string.
+    is_model_ready = model is not None and not isinstance(model, str)
+    is_vectorizer_ready = vectorizer is not None and not isinstance(vectorizer, str)
+    use_ml_path = is_model_ready and is_vectorizer_ready
 
     if use_ml_path:
         try:
-            # Transform text
+            # Type narrowing: Both are now guaranteed to be model/vectorizer objects, not strings
+            # Transform text using TF-IDF vectorizer
             X = vectorizer.transform([text])
-            # Predict probability - Assuming class 1 is Spam and class 0 is Ham
-            # Return spam probability * 100 (0-100 scale where 100 = high spam risk)
+            # Predict probability - class 1 is Spam, class 0 is Ham
+            # Returns array: [ham_probability, spam_probability]
             probs = model.predict_proba(X)[0]
-            # probs[1] is the spam probability
+            # probs[1] is the spam probability; convert to 0-100 scale
             spam_prob = probs[1]
             spam_score = spam_prob * 100
             return _calibrate_spam_score(text, spam_score)

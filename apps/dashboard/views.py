@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Sum
@@ -24,6 +24,23 @@ def dashboard_view(request):
     prev_week_start = week_start - timedelta(days=7)
     prev_week_end = week_start - timedelta(days=1)
 
+    now_value = timezone.now()
+    timezone_aware = timezone.is_aware(now_value)
+
+    def day_bounds(day):
+        start = datetime.combine(day, datetime.min.time())
+        end = start + timedelta(days=1)
+        if timezone_aware:
+            tz = timezone.get_current_timezone()
+            start = timezone.make_aware(start, tz)
+            end = timezone.make_aware(end, tz)
+        return start, end
+
+    week_start_dt, _ = day_bounds(week_start)
+    _, tomorrow_dt = day_bounds(today)
+    prev_week_start_dt, _ = day_bounds(prev_week_start)
+    _, prev_week_end_next_dt = day_bounds(prev_week_end)
+
     recent_campaigns = user_campaigns.select_related('sender').order_by('-created_at')[:5]
 
     status_style_map = {
@@ -37,6 +54,7 @@ def dashboard_view(request):
 
     campaign_rows = []
     for campaign in recent_campaigns:
+        campaign_created_at = timezone.localtime(campaign.created_at) if timezone.is_aware(campaign.created_at) else campaign.created_at
         campaign_rows.append(
             {
                 'name': campaign.name,
@@ -44,14 +62,14 @@ def dashboard_view(request):
                 'status_style': status_style_map.get(campaign.status, status_style_map['draft']),
                 'recipients': f"{campaign.total_recipients:,}",
                 'open_rate': f"{campaign.open_rate}%" if campaign.sent_count > 0 else '—',
-                'date': campaign.created_at.strftime('%b %d, %Y'),
+                'date': campaign_created_at.strftime('%b %d, %Y'),
             }
         )
 
-    weekly_campaigns = user_campaigns.filter(updated_at__date__gte=week_start, updated_at__date__lte=today)
+    weekly_campaigns = user_campaigns.filter(updated_at__gte=week_start_dt, updated_at__lt=tomorrow_dt)
     weekly_engagements = user_engagements.filter(
-        sent_at__date__gte=week_start,
-        sent_at__date__lte=today,
+        sent_at__gte=week_start_dt,
+        sent_at__lt=tomorrow_dt,
     )
 
     weekly_sent = weekly_engagements.count()
@@ -61,10 +79,10 @@ def dashboard_view(request):
     weekly_open_rate = round((weekly_opened / weekly_sent * 100), 1) if weekly_sent > 0 else 0
     weekly_spam_score = weekly_campaigns.filter(spam_score__isnull=False).aggregate(Avg('spam_score'))['spam_score__avg'] or 0
 
-    prev_weekly_campaigns = user_campaigns.filter(updated_at__date__gte=prev_week_start, updated_at__date__lte=prev_week_end)
+    prev_weekly_campaigns = user_campaigns.filter(updated_at__gte=prev_week_start_dt, updated_at__lt=prev_week_end_next_dt)
     prev_weekly_engagements = user_engagements.filter(
-        sent_at__date__gte=prev_week_start,
-        sent_at__date__lte=prev_week_end,
+        sent_at__gte=prev_week_start_dt,
+        sent_at__lt=prev_week_end_next_dt,
     )
     prev_weekly_sent = prev_weekly_engagements.count()
     prev_weekly_opened = prev_weekly_engagements.filter(opened_at__isnull=False).count()
@@ -85,7 +103,8 @@ def dashboard_view(request):
 
     total_sent = user_engagements.count()
     total_opened = user_engagements.filter(opened_at__isnull=False).count()
-    sent_today = user_engagements.filter(sent_at__date=today).count()
+    today_start_dt, today_end_dt = day_bounds(today)
+    sent_today = user_engagements.filter(sent_at__gte=today_start_dt, sent_at__lt=today_end_dt).count()
     active_campaigns = user_campaigns.filter(status__in=['sending', 'scheduled']).count()
 
     sent_delta, sent_trend = fmt_delta(weekly_sent, prev_weekly_sent)
@@ -139,8 +158,9 @@ def dashboard_view(request):
     day_buckets = []
     for offset in range(6, -1, -1):
         day = today - timedelta(days=offset)
-        sent = user_engagements.filter(sent_at__date=day).count()
-        opens = user_engagements.filter(opened_at__date=day).count()
+        day_start_dt, day_end_dt = day_bounds(day)
+        sent = user_engagements.filter(sent_at__gte=day_start_dt, sent_at__lt=day_end_dt).count()
+        opens = user_engagements.filter(opened_at__gte=day_start_dt, opened_at__lt=day_end_dt).count()
         max_sent = max(max_sent, sent)
         max_open = max(max_open, opens)
         day_buckets.append((day, sent, opens))
@@ -149,6 +169,7 @@ def dashboard_view(request):
         chart_data.append(
             {
                 'day': day.strftime('%a'),
+                'date_label': day.strftime('%b %d'),
                 'sent': sent,
                 'opens': opens,
                 'sent_pct': round((sent / max_sent) * 100) if max_sent else 0,

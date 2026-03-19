@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 class Campaign(models.Model):
     STATUS_CHOICES = [
@@ -21,6 +23,7 @@ class Campaign(models.Model):
     subject = models.CharField(max_length=998)
     body_html = models.TextField(blank=True, default='')
     body_text = models.TextField(blank=True, default='')
+    recipient_emails = models.TextField(blank=True, default='')
     from_name = models.CharField(max_length=255, blank=True)
     reply_to = models.EmailField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
@@ -51,3 +54,39 @@ class Campaign(models.Model):
         if self.sent_count == 0:
             return 0
         return round((self.bounce_count / self.sent_count) * 100, 1)
+
+    def get_recipient_list(self):
+        recipients = []
+        for item in (self.recipient_emails or '').replace(';', ',').replace('\n', ',').split(','):
+            email = item.strip().lower()
+            if not email:
+                continue
+            try:
+                validate_email(email)
+            except ValidationError:
+                continue
+            if email not in recipients:
+                recipients.append(email)
+        return recipients
+
+
+class EmailEngagement(models.Model):
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='engagements')
+    recipient_email = models.EmailField()
+    tracking_token = models.CharField(max_length=64, unique=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    opened_at = models.DateTimeField(null=True, blank=True)
+    clicked_at = models.DateTimeField(null=True, blank=True)
+    open_count = models.PositiveIntegerField(default=0)
+    click_count = models.PositiveIntegerField(default=0)
+    last_event_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['tracking_token']),
+            models.Index(fields=['campaign', 'recipient_email']),
+            models.Index(fields=['sent_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.recipient_email} - {self.campaign.name}"

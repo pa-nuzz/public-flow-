@@ -1,0 +1,89 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Campaign — Mailexa AI{% endblock %}
+{% block page_title %}Campaign{% endblock %}
+
+{% block content %}
+<div class="page-shell reveal-on-scroll">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="page-title">Campaign</h2>
+      <p class="page-subtitle">Track drafts, scheduled sends, and delivery results.</p>
+    </div>
+    <a href="{% url 'campaigns:campaign_create' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New Campaign
+    </a>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 stagger-children">
+    <div class="premium-surface card-elevate rounded-xl p-4 reveal-up delay-1"><p class="text-xs text-gray-500">All</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.all }}</p></div>
+    <div class="premium-surface card-elevate rounded-xl p-4 reveal-up delay-1"><p class="text-xs text-gray-500">Draft</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.draft }}</p></div>
+    <div class="premium-surface card-elevate rounded-xl p-4 reveal-up delay-1"><p class="text-xs text-gray-500">Scheduled</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.scheduled }}</p></div>
+    <div class="premium-surface card-elevate rounded-xl p-4 reveal-up delay-1"><p class="text-xs text-gray-500">Sent</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.sent }}</p></div>
+    <div class="premium-surface card-elevate rounded-xl p-4 reveal-up delay-1"><p class="text-xs text-gray-500">Failed</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.failed }}</p></div>
+  </div>
+
+  <div class="premium-surface card-elevate rounded-2xl reveal-on-scroll overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-100">
+            <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Campaign</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipients</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sent</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Updated</th>
+            <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for campaign in campaigns %}
+          <tr class="hover:bg-slate-50/70 transition-colors">
+            <td class="px-6 py-4">
+              <p class="font-semibold text-slate-900">{{ campaign.name }}</p>
+              <p class="text-xs text-gray-500">{{ campaign.subject }}</p>
+            </td>
+            <td class="px-4 py-4">
+              <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                {% if campaign.status == 'sent' %}bg-emerald-50 text-emerald-700
+                {% elif campaign.status == 'draft' %}bg-slate-100 text-slate-700
+                {% elif campaign.status == 'scheduled' %}bg-indigo-50 text-indigo-700
+                {% elif campaign.status == 'failed' %}bg-red-50 text-red-700
+                {% else %}bg-amber-50 text-amber-700{% endif %}">
+                {{ campaign.get_status_display }}
+              </span>
+            </td>
+            <td class="px-4 py-4 text-slate-700">{{ campaign.total_recipients }}</td>
+            <td class="px-4 py-4 text-slate-700">{{ campaign.sent_count }}</td>
+            <td class="px-4 py-4 text-gray-500">{{ campaign.updated_at|date:"Y-m-d H:i" }}</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'campaigns:campaign_edit' campaign.id %}" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:border-slate-400">Edit</a>
+                {% if campaign.status != 'sent' %}
+                <form method="post" action="{% url 'campaigns:campaign_send' campaign.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover">Send</button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'campaigns:campaign_delete' campaign.id %}" onsubmit="return confirm('Delete this campaign? This action cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-red-50 text-xs font-semibold hover:bg-red-100 hover:border-red-300">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="px-6 py-12 text-center">
+              <p class="text-sm text-gray-500">No campaigns yet. Create your first one to get started.</p>
+              <a href="{% url 'campaigns:campaign_create' %}" class="inline-flex mt-4 items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover">Create campaign</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -74,6 +74,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
+                'apps.dashboard.context_processors.dashboard_notifications',
             ],
         },
     },
@@ -90,8 +91,8 @@ DATABASES = {
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://localhost:6379/0',
     }
 }
 
@@ -130,16 +131,23 @@ STATICFILES_FINDERS = (
 )
 
 # Email Configuration
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    _auto_email_backend = 'django.core.mail.backends.smtp.EmailBackend'
+elif DEBUG:
+    _auto_email_backend = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = config('EMAIL_HOST')
-    EMAIL_PORT = config('EMAIL_PORT', cast=int)
-    EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
-    EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-    DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+    raise ValueError("EMAIL_HOST_USER and EMAIL_HOST_PASSWORD must be set in production")
+
+EMAIL_BACKEND = config('EMAIL_BACKEND', default=_auto_email_backend)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+SERVER_EMAIL = config('SERVER_EMAIL', default=DEFAULT_FROM_EMAIL)
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=20, cast=int)
 
 # Media files
 MEDIA_URL = '/media/'
@@ -173,38 +181,36 @@ LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # SMTP Encryption Key
-SMTP_ENCRYPTION_KEY = config('SMTP_ENCRYPTION_KEY')
-print(f"ENCRYPTION_KEY from env: {SMTP_ENCRYPTION_KEY}")
-# Get encryption key from environment
-ENCRYPTION_KEY = config('ENCRYPTION_KEY')
-print(f"ENCRYPTION_KEY from env: {ENCRYPTION_KEY}")
+SMTP_ENCRYPTION_KEY = config('SMTP_ENCRYPTION_KEY', default='')
+ENCRYPTION_KEY = config('ENCRYPTION_KEY', default='')
 
 # Optional: Add validation to ensure key exists in production
 if not ENCRYPTION_KEY and not DEBUG:
     raise ValueError("ENCRYPTION_KEY must be set in production environment")
 
 # Machine Learning
-ML_MODEL_PATH = BASE_DIR / 'ml_models' / 'spam_model.pkl'
+ML_MODEL_PATH = Path(config('ML_MODEL_PATH', default=str(BASE_DIR / 'ml_models' / 'spam_model.pkl')))
+ML_VECTORIZER_PATH = Path(config('ML_VECTORIZER_PATH', default=str(BASE_DIR / 'ml_models' / 'tfidf_vectorizer.pkl')))
 
 # Silencing django-ratelimit strict cache checks for development
 SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
 
 import os
-from pathlib import Path
+import base64
+import hashlib
 from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 
 load_dotenv()
 
 # Encryption Key
-ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
-print(f"Raw ENCRYPTION_KEY from env: {ENCRYPTION_KEY}")
+if not ENCRYPTION_KEY:
+    ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', '')
 
 if not ENCRYPTION_KEY:
     if DEBUG:
-        # Generate a key for development only
-        ENCRYPTION_KEY = Fernet.generate_key().decode()
-        print(f"WARNING: Generated temporary key: {ENCRYPTION_KEY}")
+        # Deterministic development key so encrypted sender passwords survive restarts
+        ENCRYPTION_KEY = base64.urlsafe_b64encode(hashlib.sha256(SECRET_KEY.encode('utf-8')).digest()).decode('utf-8')
     else:
         raise ValueError("ENCRYPTION_KEY must be set in production environment")
 

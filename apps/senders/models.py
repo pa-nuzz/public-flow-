@@ -1,9 +1,9 @@
 from django.db import models
 from django.conf import settings
-from django.core import signing
 from cryptography.fernet import Fernet
-import os
+from cryptography.fernet import InvalidToken
 import base64
+import hashlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -31,38 +31,49 @@ class Sender(models.Model):
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def get_fernet(self):
-        """Get Fernet instance using key from settings"""
+    @staticmethod
+    def _normalize_key(raw_key):
+        if not raw_key:
+            return None
+        key = str(raw_key).strip().encode()
+        missing_padding = len(key) % 4
+        if missing_padding:
+            key += b'=' * (4 - missing_padding)
         try:
-            key = settings.ENCRYPTION_KEY
-            if not key:
-                raise ValueError("ENCRYPTION_KEY is not set in settings")
+            base64.urlsafe_b64decode(key)
+        except Exception:
+            return None
+        return key
 
-            # Ensure key is a string and strip any whitespace
-            if isinstance(key, str):
-                key = key.strip()
+    @staticmethod
+    def _dev_fallback_key():
+        secret = getattr(settings, 'SECRET_KEY', '')
+        if not secret:
+            return None
+        return base64.urlsafe_b64encode(hashlib.sha256(secret.encode('utf-8')).digest())
 
-            # Ensure the key has correct padding
-            # Fernet keys should already be properly padded, but just in case
-            key_bytes = key.encode()
+    def _candidate_fernets(self):
+        raw_keys = [
+            getattr(settings, 'ENCRYPTION_KEY', ''),
+            getattr(settings, 'SMTP_ENCRYPTION_KEY', ''),
+        ]
 
-            # Add padding if necessary (Fernet keys should already be padded)
-            try:
-                # Test if key is valid base64
-                base64.urlsafe_b64decode(key_bytes)
-            except Exception as e:
-                logger.error(f"Invalid base64 key format: {e}")
-                # If padding is incorrect, try to fix it
-                missing_padding = len(key_bytes) % 4
-                if missing_padding:
-                    key_bytes += b'=' * (4 - missing_padding)
-                    logger.info(f"Added padding to key, new length: {len(key_bytes)}")
+        for raw_key in raw_keys:
+            key = self._normalize_key(raw_key)
+            if key:
+                yield Fernet(key)
 
-            return Fernet(key_bytes)
+        if getattr(settings, 'DEBUG', False):
+            dev_key = self._dev_fallback_key()
+            if dev_key:
+                yield Fernet(dev_key)
 
-        except Exception as e:
-            logger.error(f"Fernet initialization error: {e}")
-            raise
+    def get_fernet(self):
+        """Primary Fernet instance (current ENCRYPTION_KEY)."""
+        key = self._normalize_key(getattr(settings, 'ENCRYPTION_KEY', ''))
+        if not key:
+            raise ValueError("ENCRYPTION_KEY is not set or invalid in settings")
+        return Fernet(key)
 
     def set_password(self, raw_password):
         """Encrypt and set the SMTP password"""
@@ -71,7 +82,7 @@ class Sender(models.Model):
             # Encrypt the password
             encrypted = f.encrypt(raw_password.encode())
             # Store as base64 string in database
-            self.smtp_password = base64.urlsafe_b64encode(encrypted).decode()
+            self._password = base64.urlsafe_b64encode(encrypted).decode()
             logger.info(f"Password encrypted successfully for {self.display_name}")
         except Exception as e:
             logger.error(f"Password encryption error: {e}")
@@ -79,18 +90,42 @@ class Sender(models.Model):
 
     def get_password(self):
         """Decrypt and return the SMTP password"""
-        try:
-            if not self.smtp_password:
-                return None
-
-            f = self.get_fernet()
-            # Decode from base64 and decrypt
-            encrypted = base64.urlsafe_b64decode(self.smtp_password.encode())
-            decrypted = f.decrypt(encrypted)
-            return decrypted.decode()
-        except Exception as e:
-            logger.error(f"Password decryption error: {e}")
+        if not self._password:
             return None
+
+        ciphertext = self._password.strip().encode()
+
+        for fernet in self._candidate_fernets():
+            try:
+                encrypted = base64.urlsafe_b64decode(ciphertext)
+                decrypted = fernet.decrypt(encrypted).decode()
+
+                primary_fernet = self.get_fernet()
+                refreshed = base64.urlsafe_b64encode(primary_fernet.encrypt(decrypted.encode())).decode()
+                if refreshed != self._password:
+                    self._password = refreshed
+                    self.save(update_fields=['_password'])
+
+                return decrypted
+            except InvalidToken:
+                continue
+            except Exception:
+                continue
+
+        if getattr(settings, 'DEBUG', False):
+            if len(self._password) < 256 and '@' not in self._password and ' ' not in self._password:
+                logger.warning(
+                    "Sender password for '%s' appears to be stored in plain text. "
+                    "Auto-recovering in DEBUG and re-encrypting.",
+                    self.display_name,
+                )
+                plaintext = self._password
+                self.set_password(plaintext)
+                self.save(update_fields=['_password'])
+                return plaintext
+
+        logger.error("Password decryption error for sender '%s'", self.display_name)
+        return None
 
     @property
     def is_limit_reached(self):
@@ -104,6 +139,11 @@ class Sender(models.Model):
 
     class Meta:
         unique_together = ('user', 'from_email')
+
+    def save(self, *args, **kwargs):
+        if self.from_email:
+            self.from_email = self.from_email.strip().lower()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.display_name} <{self.from_email}>"

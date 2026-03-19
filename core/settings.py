@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+
     # Third Party
     'compressor',
     'django_ratelimit',
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'apps.campaigns',
     'apps.intelligence',
     'apps.dashboard',
+    'apps.contacts',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +72,8 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # root templates folder
+        'DIRS': [BASE_DIR / 'templates', BASE_DIR / 'apps' / 'contacts' / 'templates'],
+          # root templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

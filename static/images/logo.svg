@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 52" width="520" height="104">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6D63F8"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="52" height="52" rx="13" fill="url(#iconGrad)"/>
+  <rect x="1" y="1" width="50" height="50" rx="12" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <path d="M12 40 L12 13 L26 27 L40 13 L40 40"
+        fill="none" stroke="white" stroke-width="4.2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="66" y="33"
+        font-family="'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+        font-weight="800" font-size="26" fill="#0F172A" letter-spacing="-0.8">Mailexa</text>
+  <rect x="207" y="8" width="36" height="18" rx="6" fill="#EEF0FF"/>
+  <text x="225" y="21"
+        font-family="'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif"
+        font-weight="700" font-size="11" fill="#5B4CF5"
+        text-anchor="middle" letter-spacing="0.3">AI</text>
+</svg>

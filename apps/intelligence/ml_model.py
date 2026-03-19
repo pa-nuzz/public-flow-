@@ -109,9 +109,16 @@ def predict_spam_score(text):
     Returns a score out of 100 representing the probability of being spam.
     """
     model, vectorizer = get_model_and_vectorizer()
-    
-    # If the model loaded successfully (is not the string "heuristic")
-    if model != "heuristic" and vectorizer != "heuristic" and model is not None:
+
+    # Only use ML path when both objects are real model/vectorizer instances.
+    use_ml_path = (
+        model is not None
+        and vectorizer is not None
+        and not isinstance(model, str)
+        and not isinstance(vectorizer, str)
+    )
+
+    if use_ml_path:
         try:
             # Transform text
             X = vectorizer.transform([text])

@@ -6,6 +6,10 @@ from apps.senders.models import Sender
 from apps.contacts.models import ContactList
 
 class CampaignForm(forms.ModelForm):
+    sender = forms.ModelChoiceField(
+        queryset=Sender.objects.none(),
+        required=True,
+    )
     contact_list = forms.ModelChoiceField(
         queryset=ContactList.objects.none(),
         required=False,
@@ -24,10 +28,13 @@ class CampaignForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.fields['scheduled_at'].input_formats = ['%Y-%m-%dT%H:%M']
         if user:
-            self.fields['sender'].queryset = Sender.objects.filter(user=user, is_active=True)
-            self.fields['contact_list'].queryset = ContactList.objects.filter(user=user)
+            sender_field = self.fields['sender']
+            if isinstance(sender_field, forms.ModelChoiceField):
+                sender_field.queryset = Sender.objects.filter(user=user, is_active=True)
+            contact_list_field = self.fields['contact_list']
+            if isinstance(contact_list_field, forms.ModelChoiceField):
+                contact_list_field.queryset = ContactList.objects.filter(user=user)
 
     def clean_recipient_emails(self):
         value = (self.cleaned_data.get('recipient_emails') or '').strip()

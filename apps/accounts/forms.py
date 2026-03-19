@@ -8,12 +8,14 @@ class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
     company = forms.CharField(max_length=255, required=False)
 
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = User
         fields = ("email", "first_name", "last_name", "company")
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
+        if not email:
+            raise forms.ValidationError("Email is required.")
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("An account with this email already exists.")
         return email.lower()

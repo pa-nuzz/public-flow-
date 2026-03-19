@@ -173,6 +173,9 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 SERVER_EMAIL = config('SERVER_EMAIL', default=DEFAULT_FROM_EMAIL)
 EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=20, cast=int)
 
+# Public base URL used for email tracking links (opens/clicks). Example: https://your-domain.com
+TRACKING_BASE_URL = config('TRACKING_BASE_URL', default='').strip()
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

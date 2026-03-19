@@ -2,7 +2,7 @@
 {% load widget_tweaks %}
 
 {% block title %}Create Campaign - Mailexa AI{% endblock %}
-{% block page_title %}Create Campaign{% endblock %}
+{% block page_title %}{% if read_only %}View Campaign{% elif campaign %}Edit Campaign{% else %}Create Campaign{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-shell max-w-none">
@@ -32,7 +32,9 @@
 
   {% if campaign %}
   <div class="mb-4 flex justify-end">
-    {% if campaign.status == 'draft' %}
+    {% if read_only %}
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">View only</span>
+    {% elif campaign.status == 'draft' %}
     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Editing draft</span>
     {% elif campaign.status == 'sent' %}
     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">Editing sent campaign</span>
@@ -59,7 +61,13 @@
           </div>
         </div>
 
-        <!-- Tab Switcher -->
+        <!-- Contact source switcher: keeps one clear source active at a time. -->
+        <div class="mb-3 flex items-center justify-between gap-3 flex-wrap">
+          <div id="contact-source-hint" class="text-xs font-semibold text-slate-500 bg-slate-100 rounded-full px-3 py-1">
+            Source: Manual entry
+          </div>
+          <p class="text-[11px] text-slate-400">Tip: use Saved List for reliable list management, CSV for one-time imports.</p>
+        </div>
         <div class="flex gap-2 mb-5 bg-gray-100/70 p-1 rounded-xl w-fit">
           <button type="button" id="tab-manual" onclick="switchTab('manual')"
             class="tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm flex items-center gap-1.5">
@@ -82,6 +90,7 @@
         <div id="panel-manual">
           <div class="rounded-xl border-2 border-dashed border-indigo-100 bg-indigo-50/40 px-5 py-4">
             <p class="text-sm text-slate-600 font-medium">Type or paste recipient emails directly in the <span class="text-primary font-bold">Recipients</span> field in Step 2 below.</p>
+            <p class="text-xs text-slate-500 mt-1.5">Best for quick one-off campaigns where you already have clean emails.</p>
           </div>
           <input type="hidden" name="contact_list" value="" id="id_contact_list">
           <input type="hidden" name="csv_emails" id="csv_emails_input">
@@ -91,7 +100,7 @@
         <div id="panel-list" class="hidden">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {% for cl in contact_lists %}
-            <label class="contact-list-option relative flex items-start gap-3 p-4 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-primary/50 transition-all">
+            <label class="contact-list-option relative flex items-start gap-3 p-4 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-primary/50 hover:bg-indigo-50/40 transition-all">
               <input type="radio" name="contact_list_radio" value="{{ cl.id }}" class="mt-0.5 accent-indigo-600" />
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold text-slate-800 truncate">{{ cl.name }}</p>
@@ -118,7 +127,7 @@
         <!-- Tab: CSV Upload -->
         <div id="panel-csv" class="hidden">
           <div id="csv-drop-zone"
-            class="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary/50 transition-all"
+            class="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary/50 hover:bg-indigo-50/30 transition-all"
             onclick="document.getElementById('csv-file-input').click()">
             <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -276,9 +285,10 @@
       <!-- Save Actions -->
       <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-[0_18px_40px_rgba(30,41,59,0.45)] border border-indigo-800/40">
         <h3 class="text-sm font-bold uppercase tracking-widest">Ready to Save</h3>
-        <p class="text-xs text-slate-300 mt-2 leading-relaxed">Campaigns are saved as draft first so you can verify content before launching.</p>
+        <p class="text-xs text-slate-300 mt-2 leading-relaxed">{% if read_only %}This campaign is in view-only mode.{% else %}Campaigns are saved as draft first so you can verify content before launching.{% endif %}</p>
 
         <div class="mt-6 flex flex-col gap-3">
+          {% if not read_only %}
           <button type="submit" name="action" value="save_draft"
             class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -289,9 +299,10 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
             Send Campaign Now
           </button>
+          {% endif %}
           <a href="{% url 'dashboard:dashboard' %}"
             class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-800 transition-colors text-sm font-semibold">
-            Cancel
+            {% if read_only %}Back to Dashboard{% else %}Cancel{% endif %}
           </a>
         </div>
       </div>
@@ -315,9 +326,24 @@ function switchTab(tab) {
   active.classList.add('bg-white','text-slate-800','shadow-sm');
   active.classList.remove('text-gray-400');
 
+  const hint = document.getElementById('contact-source-hint');
+  if (hint) {
+    const map = {
+      manual: 'Source: Manual entry',
+      list: 'Source: Saved contact list',
+      csv: 'Source: CSV import'
+    };
+    hint.textContent = map[tab] || 'Source: Manual entry';
+  }
+
   if (tab !== 'list') {
     document.getElementById('id_contact_list').value = '';
     document.querySelectorAll('input[name="contact_list_radio"]').forEach(r => r.checked = false);
+    document.querySelectorAll('.contact-list-option').forEach(el => {
+      el.classList.remove('border-primary','bg-primary/5');
+      el.classList.add('border-gray-200');
+      el.querySelector('.check-badge')?.classList.add('hidden');
+    });
   }
   if (tab !== 'csv') {
     document.getElementById('csv_emails_input').value = '';
@@ -339,6 +365,14 @@ document.querySelectorAll('input[name="contact_list_radio"]').forEach(radio => {
     sel.querySelector('.check-badge')?.classList.remove('hidden');
   });
 });
+
+{% if read_only %}
+document.querySelectorAll('#campaign-form input, #campaign-form select, #campaign-form textarea, #campaign-form button').forEach((el) => {
+  if (el.type !== 'hidden') {
+    el.disabled = true;
+  }
+});
+{% endif %}
 
 // ── CSV Upload ─────────────────────────────────────────────────
 const csvInput = document.getElementById('csv-file-input');

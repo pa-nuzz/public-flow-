@@ -1,66 +1,211 @@
 {% extends 'base_dashboard.html' %}
 
-{% block title %}Contact Lists — Mailexa AI{% endblock %}
-{% block page_title %}Contact Lists{% endblock %}
+{% block title %}Contacts - Mailexa AI{% endblock %}
+{% block page_title %}Contacts{% endblock %}
 
 {% block content %}
 <div class="page-shell max-w-none space-y-6">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-      <h2 class="page-title">Contact Lists</h2>
-      <p class="page-subtitle">Manage your saved email lists</p>
-    </div>
-    <a href="{% url 'contacts:import_csv' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Import CSV
-    </a>
-  </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div class="premium-surface card-elevate rounded-2xl p-5">
-      <p class="text-xs text-gray-500">Total Lists</p>
-      <p class="text-2xl font-bold text-slate-900 mt-1">{{ contact_lists|length }}</p>
-    </div>
-    <div class="premium-surface card-elevate rounded-2xl p-5">
-      <p class="text-xs text-gray-500">Total Contacts</p>
-      <p class="text-2xl font-bold text-slate-900 mt-1">{{ total_contacts }}</p>
-    </div>
-  </div>
-
-  {% if not contact_lists %}
-  <div class="premium-surface card-elevate rounded-2xl p-10 text-center">
-    <p class="text-sm text-gray-500">No contact lists yet.</p>
-    <a href="{% url 'contacts:import_csv' %}" class="inline-flex mt-4 items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover">Import CSV</a>
-  </div>
-  {% else %}
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-    {% for cl in contact_lists %}
-    <div class="premium-surface card-elevate rounded-2xl p-6">
-      <div>
-        <p class="font-bold text-slate-900">{{ cl.name }}</p>
-        <p class="text-xs text-slate-400 mt-1 truncate">{{ cl.description|default:'No description' }}</p>
+  <!-- Stats + Actions Row -->
+  <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+    <div class="flex gap-4">
+      <div class="premium-surface card-elevate surface-hover-clean section-card py-4 px-5 min-w-[140px]">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Contacts</p>
+        <p class="text-2xl font-black text-slate-900">{{ total }}</p>
       </div>
-
-      <div class="mt-6">
-        <p class="text-3xl font-black text-slate-900">{{ cl.contact_count }}</p>
-        <p class="text-xs text-gray-500 mt-1">contacts</p>
+      <div class="premium-surface card-elevate surface-hover-clean section-card py-4 px-5 min-w-[140px]">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Lists</p>
+        <p class="text-2xl font-black text-slate-900">{{ contact_lists.count }}</p>
       </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'contacts:import_csv' %}"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-gray-50 transition-colors text-sm font-semibold shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        Import CSV
+      </a>
+      <button onclick="document.getElementById('add-contact-modal').classList.remove('hidden')"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/20">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Contact
+      </button>
+    </div>
+  </div>
 
-      <div class="mt-6 flex items-center justify-between gap-2">
-        <a href="{% url 'campaigns:campaign_create' %}?list={{ cl.id }}" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors">
-          Use in Campaign
-        </a>
-        <form method="post" action="{% url 'contacts:list' %}" onsubmit="return confirm('Delete this contact list? This action cannot be undone.');">
+  <!-- Your Lists -->
+  <div class="premium-surface card-elevate surface-hover-clean section-card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Your Lists</h3>
+      <a href="{% url 'contacts:import_csv' %}" class="text-xs text-primary font-semibold hover:underline">+ New List</a>
+    </div>
+    {% if contact_lists %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      {% for cl in contact_lists %}
+      <div class="flex items-start justify-between gap-2 p-4 rounded-xl border border-gray-100 bg-gray-50/60 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="w-6 h-6 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <p class="text-sm font-bold text-slate-800 truncate">{{ cl.name }}</p>
+          </div>
+          <p class="text-xs text-gray-400">{{ cl.contact_count }} contact{{ cl.contact_count|pluralize }}</p>
+          {% if cl.description %}
+          <p class="text-xs text-gray-400 truncate mt-0.5">{{ cl.description }}</p>
+          {% endif %}
+        </div>
+        <form method="post" action="{% url 'contacts:delete_list' cl.id %}"
+          onsubmit="return confirm('Delete list \'{{ cl.name }}\' and all its contacts?')">
           {% csrf_token %}
-          <input type="hidden" name="list_id" value="{{ cl.id }}">
-          <button type="submit" class="text-xs font-semibold text-red-600 hover:text-red-700">Delete</button>
+          <button type="submit"
+            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
         </form>
       </div>
-
-      <p class="text-[11px] text-gray-400 mt-3">Created {{ cl.created_at|date:"Y-m-d H:i" }}</p>
+      {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <div class="text-center py-8 rounded-xl border-2 border-dashed border-gray-200">
+      <p class="text-sm text-gray-400">No lists yet.</p>
+      <a href="{% url 'contacts:import_csv' %}" class="text-xs text-primary font-semibold hover:underline mt-1 inline-block">Import your first CSV →</a>
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
+
+  <!-- Contacts Table -->
+  <div class="premium-surface card-elevate surface-hover-clean section-card overflow-hidden p-0">
+    <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <p class="text-sm font-bold text-slate-900">All Contacts
+        <span class="ml-2 text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{{ all_contacts.count }}</span>
+      </p>
+      <form method="get" class="w-full sm:w-64">
+        <div class="relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" name="q" value="{{ search }}" placeholder="Search contacts..."
+            class="auth-input pl-8 py-2 text-sm" />
+        </div>
+      </form>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-100 bg-gray-50/50">
+            <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Name</th>
+            <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</th>
+            <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">List</th>
+            <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Added</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for contact in all_contacts %}
+          <tr class="surface-hover-clean hover:bg-gray-50/50 transition-colors">
+            <td class="px-6 py-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {% if contact.first_name %}{{ contact.first_name|first|upper }}{% endif %}{% if contact.last_name %}{{ contact.last_name|first|upper }}{% endif %}{% if not contact.first_name and not contact.last_name %}{{ contact.email|first|upper }}{% endif %}
+                </div>
+                <span class="text-sm font-semibold text-slate-800">
+                  {% if contact.first_name or contact.last_name %}
+                    {{ contact.first_name }} {{ contact.last_name }}
+                  {% else %}
+                    <span class="text-gray-400">—</span>
+                  {% endif %}
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-3.5 text-sm text-gray-500 font-mono">{{ contact.email }}</td>
+            <td class="px-6 py-3.5">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold">
+                {{ contact.contact_list.name }}
+              </span>
+            </td>
+            <td class="px-6 py-3.5 text-xs text-gray-400">{{ contact.created_at|date:"M d, Y" }}</td>
+            <td class="px-6 py-3.5 text-right">
+              <form method="post" action="{% url 'contacts:delete_contact' contact.id %}"
+                onsubmit="return confirm('Delete {{ contact.email }}?')">
+                {% csrf_token %}
+                <button type="submit"
+                  class="w-7 h-7 inline-flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center gap-2">
+                <svg class="w-10 h-10 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <p class="text-sm text-gray-400 font-medium">No contacts found.</p>
+                <a href="{% url 'contacts:import_csv' %}" class="text-xs text-primary font-semibold hover:underline">Import your first list →</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
+
+<!-- Add Contact Modal -->
+<div id="add-contact-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 bg-slate-900/45 backdrop-blur-sm overflow-y-auto" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 mb-10 border border-slate-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+      <h3 class="text-base font-bold text-slate-900">Add Contact</h3>
+      <p class="text-xs text-slate-500 mt-1">Create a single contact and attach it to a list.</p>
+    </div>
+    <form method="post" action="{% url 'contacts:add_contact' %}" class="p-6 space-y-4">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">First Name</label>
+          <input type="text" name="first_name" class="auth-input py-2 text-sm" placeholder="Alice" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Last Name</label>
+          <input type="text" name="last_name" class="auth-input py-2 text-sm" placeholder="Smith" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email <span class="text-red-500">*</span></label>
+        <input type="email" name="email" required class="auth-input py-2 text-sm" placeholder="alice@example.com" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Add to List</label>
+        <select name="list_id" class="auth-input py-2 text-sm">
+          <option value="">— Default List —</option>
+          {% for cl in contact_lists %}
+          <option value="{{ cl.id }}">{{ cl.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+          class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/20">
+          Add Contact
+        </button>
+        <button type="button" onclick="document.getElementById('add-contact-modal').classList.add('hidden')"
+          class="px-4 py-2.5 rounded-xl border border-gray-200 text-slate-600 hover:bg-gray-50 text-sm font-semibold transition-colors">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('keydown', function (event) {
+    // Allow quick keyboard close so the add-contact modal behaves like native dialogs.
+    if (event.key === 'Escape') {
+      document.getElementById('add-contact-modal')?.classList.add('hidden');
+    }
+  });
+</script>
 {% endblock %}

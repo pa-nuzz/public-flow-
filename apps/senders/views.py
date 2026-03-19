@@ -21,6 +21,8 @@ def verify_sender(request):
         if not host or not password or not port:
             return JsonResponse({'success': False, 'error': 'Missing host, port, username, or password.'})
 
+        # Try multiple auth identities because many providers (especially Gmail)
+        # require the account that generated the app password, which may be from_email.
         auth_candidates = []
         if username:
             auth_candidates.append(username)
@@ -34,6 +36,7 @@ def verify_sender(request):
         auth_error = None
 
         def try_login(server):
+            # Attempt each candidate in order and keep the last auth error for user feedback.
             nonlocal auth_error
             for candidate in auth_candidates:
                 try:
@@ -44,6 +47,7 @@ def verify_sender(request):
                     continue
             raise auth_error or smtplib.SMTPAuthenticationError(535, b'Authentication failed')
 
+        # Port 465 is implicit SSL; non-465 routes can optionally use STARTTLS.
         if port == 465:
             with smtplib.SMTP_SSL(host, port, timeout=15, context=context) as server:
                 server.ehlo()

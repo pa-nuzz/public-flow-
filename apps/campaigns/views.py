@@ -4,7 +4,9 @@ from urllib.parse import unquote_plus, urlparse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.db.models import Sum
 from django.http import HttpResponse, HttpResponseRedirect
+from django.conf import settings
 from apps.senders.models import Sender
 from .models import Campaign, EmailEngagement
 from .forms import CampaignForm
@@ -19,8 +21,20 @@ from .services import (
 )
 
 
-def _campaign_form_view(request, campaign=None):
+def _campaign_form_view(request, campaign=None, read_only=False):
     senders = Sender.objects.filter(user=request.user, is_active=True)
+
+    if read_only:
+        form = CampaignForm(user=request.user, instance=campaign)
+        for _, field in form.fields.items():
+            field.disabled = True
+        return render(request, 'campaigns/create.html', {
+            'form': form,
+            'senders': senders,
+            'campaign': campaign,
+            'contact_lists': ContactList.objects.filter(user=request.user),
+            'read_only': True,
+        })
 
     if request.method == 'POST':
         form = CampaignForm(request.POST, user=request.user, instance=campaign)
@@ -43,11 +57,11 @@ def _campaign_form_view(request, campaign=None):
                 campaign_obj.total_recipients = len(campaign_obj.get_recipient_list())
                 campaign_obj.save()
                 try:
-                    base_url = request.build_absolute_uri('/').rstrip('/')
+                    base_url = (settings.TRACKING_BASE_URL or request.build_absolute_uri('/')).rstrip('/')
                     sent_count, failed_count, last_error = send_campaign_with_smtp(campaign_obj, base_url)
-                    campaign_obj.sent_count = sent_count
-                    campaign_obj.bounce_count = failed_count
-                    campaign_obj.status = 'sent' if sent_count > 0 else 'failed'
+                    campaign_obj.sent_count = (campaign_obj.sent_count or 0) + sent_count
+                    campaign_obj.bounce_count = (campaign_obj.bounce_count or 0) + failed_count
+                    campaign_obj.status = 'sent' if campaign_obj.sent_count > 0 else 'failed'
                     campaign_obj.save(update_fields=['sent_count', 'bounce_count', 'status', 'updated_at'])
                     if failed_count > 0:
                         messages.warning(request, f'Campaign sent with partial failures. Sent: {sent_count}, failed: {failed_count}. {last_error or ""}'.strip())
@@ -87,6 +101,12 @@ def campaign_edit(request, campaign_id):
 
 
 @login_required
+def campaign_view(request, campaign_id):
+    campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
+    return _campaign_form_view(request, campaign=campaign, read_only=True)
+
+
+@login_required
 def campaign_send(request, campaign_id):
     campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
     if request.method != 'POST':
@@ -96,11 +116,11 @@ def campaign_send(request, campaign_id):
     campaign.total_recipients = len(campaign.get_recipient_list())
     campaign.save(update_fields=['status', 'total_recipients', 'updated_at'])
     try:
-        base_url = request.build_absolute_uri('/').rstrip('/')
+        base_url = (settings.TRACKING_BASE_URL or request.build_absolute_uri('/')).rstrip('/')
         sent_count, failed_count, last_error = send_campaign_with_smtp(campaign, base_url)
-        campaign.sent_count = sent_count
-        campaign.bounce_count = failed_count
-        campaign.status = 'sent' if sent_count > 0 else 'failed'
+        campaign.sent_count = (campaign.sent_count or 0) + sent_count
+        campaign.bounce_count = (campaign.bounce_count or 0) + failed_count
+        campaign.status = 'sent' if campaign.sent_count > 0 else 'failed'
         campaign.save(update_fields=['sent_count', 'bounce_count', 'status', 'updated_at'])
 
         if failed_count > 0:
@@ -134,6 +154,7 @@ def campaign_delete(request, campaign_id):
 @login_required
 def campaign_list(request):
     campaigns = Campaign.objects.filter(user=request.user).select_related('sender')
+    engagements = EmailEngagement.objects.filter(campaign__user=request.user)
     status_counts = {
         'all': campaigns.count(),
         'draft': campaigns.filter(status='draft').count(),
@@ -141,7 +162,17 @@ def campaign_list(request):
         'sent': campaigns.filter(status='sent').count(),
         'failed': campaigns.filter(status='failed').count(),
     }
-    return render(request, 'campaigns/list.html', {'campaigns': campaigns, 'status_counts': status_counts})
+    email_totals = {
+        'recipients': campaigns.aggregate(Sum('total_recipients'))['total_recipients__sum'] or 0,
+        'sent': engagements.count(),
+        'opened': engagements.filter(opened_at__isnull=False).count(),
+        'clicked': engagements.filter(clicked_at__isnull=False).count(),
+    }
+    return render(request, 'campaigns/list.html', {
+        'campaigns': campaigns,
+        'status_counts': status_counts,
+        'email_totals': email_totals,
+    })
 
 
 def campaign_track_open(request, token):
@@ -170,11 +201,17 @@ def campaign_track_click(request, token):
     if tracking:
         now = timezone.now()
         first_click = tracking.clicked_at is None
+        first_open_via_click = tracking.opened_at is None
         tracking.click_count = (tracking.click_count or 0) + 1
         tracking.last_event_at = now
         if first_click:
             tracking.clicked_at = now
-        tracking.save(update_fields=['click_count', 'last_event_at', 'clicked_at'])
+        if first_open_via_click:
+            tracking.opened_at = now
+        tracking.save(update_fields=['click_count', 'last_event_at', 'clicked_at', 'opened_at'])
+
+        if first_open_via_click:
+            update_campaign_unique_open_count(tracking.campaign)
 
     next_url = unquote_plus(request.GET.get('next', '')).strip()
     parsed = urlparse(next_url)

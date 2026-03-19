@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" width="52" height="52">
+  <defs>
+    <linearGradient id="iconGradMark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6D63F8"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="52" height="52" rx="13" fill="url(#iconGradMark)"/>
+  <rect x="1" y="1" width="50" height="50" rx="12" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <path d="M12 40 L12 13 L26 27 L40 13 L40 40"
+        fill="none" stroke="white" stroke-width="4.2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

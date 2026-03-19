@@ -91,7 +91,7 @@ textarea:focus-visible {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  transition: transform .2s ease, background-color .2s ease, color .2s ease;
+  transition: background-color .2s ease, color .2s ease;
 }
 
 .sidebar-link.active {
@@ -101,9 +101,8 @@ textarea:focus-visible {
 }
 
 .sidebar-link:hover:not(.active) {
-  background-color: var(--surface);
+  background-color: #f1f5f9;
   color: var(--text-primary);
-  transform: translateX(3px);
 }
 
 .btn-primary {
@@ -189,13 +188,12 @@ a {
   padding: 0 0.625rem;
   color: #475569;
   font-weight: 500;
-  transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+  transition: background-color .2s ease, color .2s ease;
 }
 
 .nav-link-clean:hover {
-  color: var(--primary);
-  border-color: #e2e8f0;
-  background-color: #f8fafc;
+  background-color: #f1f5f9;
+  color: #1e293b;
 }
 
 .surface-hover-clean {
@@ -219,6 +217,7 @@ a {
   background: var(--primary);
   border-radius: 0 4px 4px 0;
 }
+/* Sidebar link position and active indicator */
 .sidebar-link {
   position: relative;
 }

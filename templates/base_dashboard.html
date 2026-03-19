@@ -5,6 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{% block title %}Dashboard — Mailexa AI{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/logo-mark.svg' %}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -45,13 +46,10 @@
     <div class="ambient-orb w-72 h-72 bg-indigo-300/20 -top-16 -left-10"></div>
     <div class="ambient-orb alt w-80 h-80 bg-emerald-300/15 top-44 -right-20"></div>
     <!-- Sidebar -->
-    <aside class="w-64 premium-surface border-r border-indigo-100/70 hidden lg:flex flex-col fixed h-full z-30 shadow-[10px_0_40px_rgba(79,70,229,0.08)]">
-      <div class="px-6 py-6 border-b border-white/10">
-        <a href="{% url 'dashboard:dashboard' %}" class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-          </div>
-          <span class="font-bold text-xl tracking-tight text-slate-900">Mailexa<span class="text-primary">AI</span></span>
+    <aside class="w-64 bg-white border-r border-slate-200 hidden lg:flex flex-col fixed h-full z-30 shadow-[10px_0_24px_rgba(15,23,42,0.08)]">
+      <div class="px-6 py-5 border-b border-white/10">
+        <a href="{% url 'dashboard:dashboard' %}" class="inline-flex items-center">
+          <img src="{% static 'images/logo.svg' %}" alt="Mailexa AI Logo" class="h-[39px] w-auto" />
         </a>
       </div>
 
@@ -97,7 +95,7 @@
         <p class="text-[11px] text-white leading-relaxed">Use our AI Spam Guard before each campaign for up to <span class="font-bold text-indigo-200">3x</span> better inbox rates.</p>
       </div>
 
-      <div class="px-6 py-6 border-t border-gray-50 bg-gray-50/50">
+      <div class="px-6 py-4 border-t border-gray-50 bg-gray-50/50">
         <form action="{% url 'accounts:logout' %}" method="post">
           {% csrf_token %}
           <button type="submit" class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white border border-red-100 text-red-600 rounded-xl text-sm font-bold shadow-sm hover:bg-red-50 hover:border-red-200 transition-all btn-premium">
@@ -111,17 +109,17 @@
     <!-- Main Content Area -->
     <div class="flex-grow lg:ml-64 flex flex-col min-h-screen">
       <!-- Header -->
-      <header class="h-18 premium-surface border-b border-indigo-100/60 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20">
+      <header class="h-[72px] bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20">
         <div>
-          <h1 class="font-extrabold text-2xl text-slate-900 tracking-tight">{% block page_title %}Dashboard{% endblock %}</h1>
+          <h1 class="font-bold text-xl text-slate-900 tracking-tight">{% block page_title %}Dashboard{% endblock %}</h1>
           <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mt-0.5">{% greeting %}, {{ user.first_name }}</p>
         </div>
         
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-4">
           <!-- Notification Bell -->
           <div class="relative" id="notif-wrapper" data-clear-url="{% url 'dashboard:clear_notifications' %}" data-csrf-token="{{ csrf_token }}">
-            <button onclick="toggleNotifications()" class="w-10 h-10 flex items-center justify-center text-slate-600 bg-white border border-slate-200 shadow-sm hover:text-primary hover:border-primary/30 hover:bg-primary-light rounded-xl transition-all relative hover-scale-soft">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <button onclick="toggleNotifications()" class="w-9 h-9 flex items-center justify-center text-slate-600 bg-white border border-slate-200 shadow-sm hover:text-primary hover:border-primary/30 hover:bg-primary-light rounded-xl transition-all relative hover-scale-soft">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
               <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white {% if dashboard_notification_count == 0 %}hidden{% endif %}"></span>
             </button>
 
@@ -133,7 +131,7 @@
               </div>
               <div id="notif-list" class="max-h-96 overflow-y-auto divide-y divide-gray-50 pr-1 {% if dashboard_notification_count == 0 %}hidden{% endif %}">
                 {% for notification in dashboard_notifications %}
-                <a href="{{ notification.url }}" class="px-5 py-4 hover:bg-gray-50/50 transition-colors flex gap-3 group">
+                <a href="{{ notification.url }}" class="px-5 py-4 hover:bg-slate-100 transition-colors flex gap-3 group">
                   <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center
                     {% if notification.tone == 'success' %}bg-emerald-50 text-emerald-600
                     {% elif notification.tone == 'warning' %}bg-amber-50 text-amber-600
@@ -169,7 +167,7 @@
               <p class="text-sm font-bold text-slate-900">{{ user.get_full_name }}</p>
               <p class="text-[11px] text-gray-400 font-medium uppercase">{{ user.company|default:"Independent User" }}</p>
             </div>
-            <div class="w-11 h-11 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold shadow-inner overflow-hidden border-2 border-white">
+            <div class="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold shadow-inner overflow-hidden border-2 border-white">
               {% if user.avatar %}
               <img src="{{ user.avatar.url }}" alt="" class="w-full h-full object-cover">
               {% else %}
@@ -204,13 +202,13 @@
       </div>
       {% endif %}
 
-      <main class="p-4 sm:p-5 lg:p-7 flex-grow max-w-[1500px] relative">
+      <main class="p-4 sm:p-5 lg:p-6 flex-grow max-w-[1500px] relative">
         <div class="pointer-events-none absolute -top-12 -right-12 w-56 h-56 bg-indigo-400/10 rounded-full blur-3xl"></div>
         <div class="pointer-events-none absolute top-1/3 -left-20 w-64 h-64 bg-purple-300/10 rounded-full blur-3xl"></div>
         <div class="reveal-on-scroll">{% block content %}{% endblock %}</div>
       </main>
 
-      <footer class="mt-auto px-4 sm:px-6 lg:px-10 py-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between sm:items-center text-xs text-gray-400 font-medium">
+      <footer class="mt-auto px-4 sm:px-6 lg:px-8 py-3.5 bg-white border-t border-gray-100 flex flex-col sm:flex-row gap-2 sm:gap-0 justify-between sm:items-center text-xs text-gray-400 font-medium">
         <p>&copy; {% now "Y" %} Mailexa AI. High-Deliverability Command Center.</p>
         <div class="flex gap-6">
           <a href="#" class="hover:text-primary transition-colors">Documentation</a>

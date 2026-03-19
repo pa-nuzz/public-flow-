@@ -205,6 +205,9 @@
       return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
     };
 
+    // Prefer hidden form token first, then cookie fallback for reliable CSRF protection in AJAX calls.
+    const csrfFromForm = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+
     testButtons.forEach(function (button) {
       button.addEventListener('click', async function () {
         const host = button.dataset.host;
@@ -221,11 +224,16 @@
         label.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle><path d="M21 12a9 9 0 00-9-9"/></svg>Testing...';
 
         try {
+          const csrfToken = csrfFromForm || getCookie('csrftoken');
+          if (!csrfToken) {
+            throw new Error('CSRF token missing. Reload this page and try again.');
+          }
+
           const response = await fetch("{% url 'senders:verify_sender' %}", {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRFToken': getCookie('csrftoken'),
+              'X-CSRFToken': csrfToken,
               'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
@@ -238,27 +246,44 @@
             })
           });
 
-          const data = await response.json();
-          if (data.success) {
+          // Parse defensively: backend may return HTML on auth/CSRF/server failures.
+          const rawBody = await response.text();
+          let data;
+          try {
+            data = rawBody ? JSON.parse(rawBody) : {};
+          } catch (parseError) {
+            data = {
+              success: false,
+              error: response.ok
+                ? 'Failed: unexpected server response format.'
+                : `Failed: server returned ${response.status} ${response.statusText}.`
+            };
+          }
+
+          if (response.ok && data.success) {
             button.classList.remove('border-slate-200', 'text-slate-600');
             button.classList.add('border-emerald-300', 'text-emerald-700', 'bg-emerald-50');
-            label.textContent = 'Connected ✓';
+            label.textContent = 'Passed ✓';
             setTimeout(function () {
               button.classList.remove('border-emerald-300', 'text-emerald-700', 'bg-emerald-50', 'border-red-300', 'text-red-700', 'bg-red-50');
               button.classList.add('border-slate-200', 'text-slate-600');
               label.textContent = 'Test Connection';
             }, 2200);
           } else {
-            const reason = data.error ? data.error : 'Connection failed';
+            // 403 is almost always auth/CSRF/session, so show actionable guidance.
+            const fallbackReason = response.status === 403
+              ? 'Failed: 403 Forbidden (session or CSRF). Reload page and test again.'
+              : `Failed: ${response.status} ${response.statusText}`;
+            const reason = data.error ? data.error : fallbackReason;
             button.classList.remove('border-slate-200', 'text-slate-600');
             button.classList.add('border-red-300', 'text-red-700', 'bg-red-50');
-            label.textContent = reason;
+            label.textContent = reason.startsWith('Failed') ? reason : `Failed: ${reason}`;
           }
         } catch (err) {
           button.classList.remove('border-slate-200', 'text-slate-600');
           button.classList.add('border-red-300', 'text-red-700', 'bg-red-50');
           const reason = err && err.message ? err.message : 'Network error';
-          label.textContent = reason;
+          label.textContent = `Failed: ${reason}`;
         } finally {
           button.disabled = false;
         }

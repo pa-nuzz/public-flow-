@@ -1,6 +1,6 @@
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
-from .views import login_view, register_view, logout_view
+from .views import login_view, register_view, logout_view, verify_email_view, resend_verification_view
 
 app_name = "accounts"
 
@@ -8,6 +8,8 @@ urlpatterns = [
     path("login/", login_view, name="login"),
     path("register/", register_view, name="register"),
     path("logout/", logout_view, name="logout"),
+     path('verify-email/<uidb64>/<token>/', verify_email_view, name='verify_email'),
+     path('resend-verification/', resend_verification_view, name='resend_verification'),
     
 
     # Password Reset

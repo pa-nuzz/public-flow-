@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static widget_tweaks %}
 {% block title %}Create Account — Mailexa AI{% endblock %}
 {% block extra_head %}
 <style>
@@ -12,8 +13,8 @@
 <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
   <div class="auth-card !max-w-[480px]">
     <div class="text-center mb-10">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-light rounded-2xl text-primary mb-6 shadow-sm" style="animation: logoPop .5s ease-out both;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <div class="inline-flex items-center justify-center mb-6" style="animation: logoPop .5s ease-out both;">
+        <img src="{% static 'images/logo-mark.svg' %}" alt="Mailexa AI Logo" class="w-12 h-12" />
       </div>
       <h1 class="text-3xl font-extrabold text-[#0F1117] tracking-tight">Create Account</h1>
       <p class="text-gray-500 mt-2">Start sending elite email campaigns today</p>
@@ -28,7 +29,6 @@
 
     <form method="post" action="{% url 'accounts:register' %}" class="space-y-6">
       {% csrf_token %}
-      {% load widget_tweaks %}
       
       <div class="grid grid-cols-2 gap-4">
         <div>

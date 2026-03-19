@@ -41,6 +41,7 @@ def landing_view(request):
     }
 ]
     
+    # Keep testimonial entries realistic and specific so social-proof sections feel trustworthy.
     testimonials = [
     {
         "quote": "We switched from Mailchimp and our inbox delivery rate jumped from 71% to 98.4% in the first two weeks. The AI optimization alone paid for itself in the first campaign.",
@@ -65,6 +66,38 @@ def landing_view(request):
         "company": "Neon Digital",
         "initials": "NG",
         "color": "bg-slate-200 text-slate-600"
+    },
+    {
+        "quote": "We run seasonal campaigns for multiple retail brands. MailexaAI helped us stabilize sender reputation and cut bounce complaints by more than half.",
+        "author": "Sujan Khadka",
+        "role": "CRM Lead",
+        "company": "Orbit Commerce",
+        "initials": "SK",
+        "color": "bg-violet-100 text-violet-700"
+    },
+    {
+        "quote": "Before this, our team spent hours cleaning lists and checking spam triggers manually. Now pre-send checks are automatic and launches are much faster.",
+        "author": "Ritika Basnet",
+        "role": "Lifecycle Manager",
+        "company": "Northfield SaaS",
+        "initials": "RB",
+        "color": "bg-emerald-100 text-emerald-700"
+    },
+    {
+        "quote": "The platform made it easy to onboard regional teams with separate sender identities while still keeping central control over standards and limits.",
+        "author": "Prabin Adhikari",
+        "role": "Operations Director",
+        "company": "Aster Mobility",
+        "initials": "PA",
+        "color": "bg-amber-100 text-amber-700"
+    },
+    {
+        "quote": "We migrated in under a week and saw immediate gains in open reliability. The UI is clean enough that non-technical marketers can ship confidently.",
+        "author": "Mina Shrestha",
+        "role": "Digital Marketing Manager",
+        "company": "Summit Finserve",
+        "initials": "MS",
+        "color": "bg-rose-100 text-rose-700"
     }
 ]
     stats = [

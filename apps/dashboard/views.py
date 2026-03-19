@@ -1,3 +1,9 @@
+"""Dashboard views module.
+
+Provides views for rendering the main dashboard with KPIs, email engagement metrics,
+campaign statistics, and user profile/settings management.
+"""
+
 from datetime import datetime, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,19 +21,45 @@ from .forms import ChangePasswordForm, ProfileForm
 
 @login_required
 def dashboard_view(request):
+    """Render the main dashboard with KPIs, engagement metrics, and campaign summaries.
+    
+    This view aggregates email engagement data from the EmailEngagement model and calculates
+    week-over-week deltas for key performance indicators (KPIs). It also prepares chart data
+    for daily email sent/open visualization and recent campaign details.
+    
+    Args:
+        request: The HTTP request object containing the authenticated user.
+    
+    Returns:
+        HttpResponse: Rendered dashboard template with KPI and chart context data.
+    """
+    # Fetch user-specific campaigns, engagements, and active senders
     user_campaigns = Campaign.objects.filter(user=request.user)
     user_engagements = EmailEngagement.objects.filter(campaign__user=request.user)
     senders = Sender.objects.filter(user=request.user, is_active=True)
 
+    # Calculate date ranges: current week (last 7 days) and previous week
     today = timezone.now().date()
-    week_start = today - timedelta(days=6)
-    prev_week_start = week_start - timedelta(days=7)
-    prev_week_end = week_start - timedelta(days=1)
+    week_start = today - timedelta(days=6)  # 7 days starting from 6 days ago
+    prev_week_start = week_start - timedelta(days=7)  # Previous 7-day period
+    prev_week_end = week_start - timedelta(days=1)  # Last day of previous week
 
+    # Determine if timezone-aware operations are needed
     now_value = timezone.now()
     timezone_aware = timezone.is_aware(now_value)
 
     def day_bounds(day):
+        """Calculate timezone-safe start and end datetime for a calendar day.
+        
+        This helper ensures that email aggregation works correctly across timezone
+        boundaries. Date filters using __date would fail on DST transitions.
+        
+        Args:
+            day: A date object representing the calendar day.
+        
+        Returns:
+            tuple: (start_datetime, end_datetime) for the calendar day, timezone-aware if needed.
+        """
         start = datetime.combine(day, datetime.min.time())
         end = start + timedelta(days=1)
         if timezone_aware:
@@ -36,13 +68,16 @@ def dashboard_view(request):
             end = timezone.make_aware(end, tz)
         return start, end
 
+    # Pre-calculate datetime boundaries for week and previous week filtering
     week_start_dt, _ = day_bounds(week_start)
-    _, tomorrow_dt = day_bounds(today)
+    _, tomorrow_dt = day_bounds(today)  # End of today (start of tomorrow)
     prev_week_start_dt, _ = day_bounds(prev_week_start)
     _, prev_week_end_next_dt = day_bounds(prev_week_end)
 
+    # Fetch 5 most recent campaigns for display in dashboard summary
     recent_campaigns = user_campaigns.select_related('sender').order_by('-created_at')[:5]
 
+    # Map campaign statuses to Tailwind CSS styling classes for UI consistency
     status_style_map = {
         'sent': 'bg-emerald-50 text-emerald-600 border-emerald-200',
         'scheduled': 'bg-indigo-50 text-indigo-600 border-indigo-200',
@@ -52,8 +87,10 @@ def dashboard_view(request):
         'paused': 'bg-slate-100 text-slate-700 border-slate-200',
     }
 
+    # Transform campaign objects into display rows with formatted data
     campaign_rows = []
     for campaign in recent_campaigns:
+        # Localize campaign creation datetime for proper display in user's timezone
         campaign_created_at = timezone.localtime(campaign.created_at) if timezone.is_aware(campaign.created_at) else campaign.created_at
         campaign_rows.append(
             {
@@ -66,19 +103,22 @@ def dashboard_view(request):
             }
         )
 
+    # Fetch weekly data (current 7-day period) using timezone-safe datetime ranges
     weekly_campaigns = user_campaigns.filter(updated_at__gte=week_start_dt, updated_at__lt=tomorrow_dt)
     weekly_engagements = user_engagements.filter(
         sent_at__gte=week_start_dt,
         sent_at__lt=tomorrow_dt,
     )
 
+    # Calculate this week's KPIs from EmailEngagement events (event-driven, not denormalized counts)
     weekly_sent = weekly_engagements.count()
     weekly_bounced = weekly_campaigns.aggregate(Sum('bounce_count'))['bounce_count__sum'] or 0
-    weekly_opened = weekly_engagements.filter(opened_at__isnull=False).count()
-    weekly_clicked = weekly_engagements.filter(clicked_at__isnull=False).count()
+    weekly_opened = weekly_engagements.filter(opened_at__isnull=False).count()  # Emails with first_open tracked
+    weekly_clicked = weekly_engagements.filter(clicked_at__isnull=False).count()  # Emails with first_click tracked
     weekly_open_rate = round((weekly_opened / weekly_sent * 100), 1) if weekly_sent > 0 else 0
     weekly_spam_score = weekly_campaigns.filter(spam_score__isnull=False).aggregate(Avg('spam_score'))['spam_score__avg'] or 0
 
+    # Fetch previous week's data for delta (week-over-week comparison) calculations
     prev_weekly_campaigns = user_campaigns.filter(updated_at__gte=prev_week_start_dt, updated_at__lt=prev_week_end_next_dt)
     prev_weekly_engagements = user_engagements.filter(
         sent_at__gte=prev_week_start_dt,
@@ -92,6 +132,18 @@ def dashboard_view(request):
     prev_active_campaigns = prev_weekly_campaigns.filter(status__in=['sending', 'scheduled']).count()
 
     def fmt_delta(current, previous, suffix=''):
+        """Format delta changes for KPI display with trend indicator.
+        
+        Converts week-over-week changes into a human-readable format with up/down trend.
+        
+        Args:
+            current (float): Current period value.
+            previous (float): Previous period value for comparison.
+            suffix (str): Optional suffix (e.g., '%' for percentages).
+        
+        Returns:
+            tuple: (formatted_delta_str, trend_direction) where trend is 'up' or 'down'.
+        """
         if previous == 0:
             if current == 0:
                 return '0' + suffix, 'up'
@@ -101,20 +153,23 @@ def dashboard_view(request):
         sign = '+' if delta >= 0 else ''
         return f'{sign}{delta}{suffix}', trend
 
+    # Calculate all-time totals and today's metrics
     total_sent = user_engagements.count()
     total_opened = user_engagements.filter(opened_at__isnull=False).count()
     today_start_dt, today_end_dt = day_bounds(today)
     sent_today = user_engagements.filter(sent_at__gte=today_start_dt, sent_at__lt=today_end_dt).count()
     active_campaigns = user_campaigns.filter(status__in=['sending', 'scheduled']).count()
 
+    # Calculate week-over-week deltas for all KPIs
     sent_delta, sent_trend = fmt_delta(weekly_sent, prev_weekly_sent)
     open_delta, open_trend = fmt_delta(weekly_open_rate, prev_open_rate, '%')
     click_delta, click_trend = fmt_delta(weekly_clicked, prev_weekly_clicked)
     spam_delta, spam_trend = fmt_delta(round(weekly_spam_score or 0, 1), round(prev_spam_score or 0, 1))
     active_delta, active_trend = fmt_delta(active_campaigns, prev_active_campaigns)
 
+    # Build KPI card data structure for frontend rendering with styling and SVG icons
     kpis = [
-        {
+        {  # KPI 1: Emails Sent (Last 7 Days)
             'label': 'Emails Sent (Last 7 Days)',
             'value': f"{weekly_sent:,}",
             'change': sent_delta,
@@ -152,34 +207,40 @@ def dashboard_view(request):
         },
     ]
 
+    # Build chart data for 7-day trend visualization using timezone-safe day bucketing
     chart_data = []
-    max_sent = 1
+    max_sent = 1  # Minimum value to avoid division by zero
     max_open = 1
     day_buckets = []
+    # Aggregate engagement counts by calendar day (backward from today)
     for offset in range(6, -1, -1):
         day = today - timedelta(days=offset)
-        day_start_dt, day_end_dt = day_bounds(day)
+        day_start_dt, day_end_dt = day_bounds(day)  # Get timezone-safe boundaries
         sent = user_engagements.filter(sent_at__gte=day_start_dt, sent_at__lt=day_end_dt).count()
         opens = user_engagements.filter(opened_at__gte=day_start_dt, opened_at__lt=day_end_dt).count()
         max_sent = max(max_sent, sent)
         max_open = max(max_open, opens)
         day_buckets.append((day, sent, opens))
 
+    # Transform bucket data into chart display format with percentage calculations
     for day, sent, opens in day_buckets:
         chart_data.append(
             {
-                'day': day.strftime('%a'),
-                'date_label': day.strftime('%b %d'),
+                'day': day.strftime('%a'),  # Day of week abbreviation (Mon, Tue, etc.)
+                'date_label': day.strftime('%b %d'),  # Date label for tooltip (Mar 19)
                 'sent': sent,
                 'opens': opens,
-                'sent_pct': round((sent / max_sent) * 100) if max_sent else 0,
+                'sent_pct': round((sent / max_sent) * 100) if max_sent else 0,  # Percentage for bar height
                 'opens_pct': round((opens / max_open) * 100) if max_open else 0,
             }
         )
 
+    # Determine max value for weekly stats bar width scaling
     max_weekly_value = max(weekly_sent, weekly_opened, weekly_bounced, senders.count(), weekly_clicked, 1)
+    # Calculate deliverability rate (percentage of emails successfully delivered)
     deliverability_rate = round(((weekly_sent - weekly_bounced) / weekly_sent) * 100, 1) if weekly_sent else 0.0
 
+    # Build weekly statistics bars for sidebar visualization
     weekly_stats = [
         {
             'label': 'Total Sent',
@@ -207,26 +268,38 @@ def dashboard_view(request):
         },
     ]
 
+    # Compile all dashboard data into context dictionary for template rendering
     context = {
-        'kpis': kpis,
-        'chart_data': chart_data,
-        'weekly_stats': weekly_stats,
-        'campaigns': campaign_rows,
-        'inbox_rate': deliverability_rate,
-        'total_sent': total_sent,
-        'total_opened': total_opened,
-        'weekly_clicked': weekly_clicked,
-        'sent_today': sent_today,
-        'weekly_spam_score': round(weekly_spam_score, 1) if weekly_spam_score else 0,
-        'spam_delta': spam_delta,
-        'spam_trend': spam_trend,
-        'weekly_clicked_width': int((weekly_clicked / max_weekly_value) * 100) if max_weekly_value else 0,
+        'kpis': kpis,  # Key performance indicators with deltas
+        'chart_data': chart_data,  # 7-day sent/open trend data
+        'weekly_stats': weekly_stats,  # Weekly bar chart stats
+        'campaigns': campaign_rows,  # Recent campaign summaries
+        'inbox_rate': deliverability_rate,  # Percentage of emails delivered
+        'total_sent': total_sent,  # All-time total emails sent
+        'total_opened': total_opened,  # All-time total emails opened
+        'weekly_clicked': weekly_clicked,  # This week's total clicks
+        'sent_today': sent_today,  # Emails sent today
+        'weekly_spam_score': round(weekly_spam_score, 1) if weekly_spam_score else 0,  # Weekly avg spam score
+        'spam_delta': spam_delta,  # Week-over-week spam score change
+        'spam_trend': spam_trend,  # Spam score trend direction
+        'weekly_clicked_width': int((weekly_clicked / max_weekly_value) * 100) if max_weekly_value else 0,  # Bar % width
     }
     return render(request, 'dashboard/home.html', context)
 
 
 @login_required
 def settings_view(request):
+    """Manage sender SMTP profiles and email credentials.
+    
+    Allows users to add, update, and delete SMTP sender profiles for outgoing emails.
+    Email normalization and deduplication prevent duplicate sender configurations.
+    
+    Args:
+        request: The HTTP request object containing the authenticated user.
+    
+    Returns:
+        HttpResponse: Rendered settings template with senders list and form.
+    """
     senders = Sender.objects.filter(user=request.user)
     sender_form = SenderForm()
 
@@ -286,6 +359,17 @@ def settings_view(request):
 
 @login_required
 def profile_view(request):
+    """Manage user profile and password settings.
+    
+    Allows users to update avatar, company info, and change their password.
+    Also displays total sent campaigns count.
+    
+    Args:
+        request: The HTTP request object containing the authenticated user.
+    
+    Returns:
+        HttpResponse: Rendered profile template with user forms and campaign count.
+    """
     profile_form = ProfileForm(instance=request.user)
     password_form = ChangePasswordForm(request.user)
     total_campaigns = Campaign.objects.filter(user=request.user, status='sent').count()
@@ -316,6 +400,16 @@ def profile_view(request):
 
 @login_required
 def clear_notifications_view(request):
+    """Clear dashboard notification dismissal timestamp via AJAX.
+    
+    Records when user dismissed dashboard notifications to control re-display.
+    
+    Args:
+        request: The HTTP request object with POST method.
+    
+    Returns:
+        JsonResponse: JSON response with status confirmation.
+    """
     if request.method != 'POST':
         return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
 
@@ -326,4 +420,14 @@ def clear_notifications_view(request):
 
 @login_required
 def templates_view(request):
+    """Render email templates management page.
+    
+    Currently a placeholder for future template management functionality.
+    
+    Args:
+        request: The HTTP request object containing the authenticated user.
+    
+    Returns:
+        HttpResponse: Rendered templates page.
+    """
     return render(request, 'dashboard/templates_page.html', {'templates': []})

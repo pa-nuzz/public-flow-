@@ -31,13 +31,6 @@
     <button type="button" class="status-filter-tab text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-900 rounded-lg px-4 py-2 text-sm font-medium inline-flex items-center gap-2" data-status="failed">Failed <span class="text-[11px] rounded-full px-2 py-0.5 {% if status_counts.failed == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.failed }}</span></button>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-5 stagger-children">
-    <div class="premium-surface card-elevate rounded-2xl p-5 reveal-up delay-1"><p class="text-xs text-gray-500">All Campaigns</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.all }}</p></div>
-    <div class="premium-surface card-elevate rounded-2xl p-5 reveal-up delay-1"><p class="text-xs text-gray-500">Scheduled Campaigns</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.scheduled }}</p></div>
-    <div class="premium-surface card-elevate rounded-2xl p-5 reveal-up delay-1"><p class="text-xs text-gray-500">Sent Campaigns</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.sent }}</p></div>
-    <div class="premium-surface card-elevate rounded-2xl p-5 reveal-up delay-1"><p class="text-xs text-gray-500">Failed Campaigns</p><p class="text-2xl font-bold text-slate-900">{{ status_counts.failed }}</p></div>
-  </div>
-
   <div class="grid grid-cols-1 md:grid-cols-2 gap-5 stagger-children">
     <div class="premium-surface card-elevate rounded-2xl p-5 reveal-up delay-1"><p class="text-xs text-gray-500">Total Recipients (Configured)</p><p class="text-2xl font-bold text-slate-900">{{ email_totals.recipients }}</p></div>
     <div class="premium-surface card-elevate rounded-2xl p-5 reveal-up delay-1"><p class="text-xs text-gray-500">Total Sent (All Time)</p><p class="text-2xl font-bold text-slate-900">{{ email_totals.sent }}</p></div>

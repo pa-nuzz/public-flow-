@@ -19,7 +19,7 @@
 
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
     <div class="xl:col-span-5">
-      <div class="premium-surface card-elevate section-card">
+      <div class="premium-surface card-elevate surface-hover-clean section-card">
         <div class="section-head">
           <h2 class="section-title">Connect Sender</h2>
           <p class="section-subtitle">Configure SMTP Outbound</p>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="xl:col-span-7 space-y-6">
-      <div class="premium-surface rounded-2xl border border-gray-100 p-6">
+      <div class="premium-surface surface-hover-clean rounded-2xl border border-gray-100 p-6">
         <div class="flex items-center gap-2 mb-2">
           <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <h3 class="card-title">SMTP Best Practices</h3>
@@ -97,7 +97,7 @@
         </ul>
       </div>
 
-      <div class="premium-surface card-elevate rounded-2xl border border-gray-100 overflow-hidden">
+      <div class="premium-surface card-elevate surface-hover-clean rounded-2xl border border-gray-100 overflow-hidden">
         <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
           <div>
             <h2 class="section-title">Connected Accounts</h2>
@@ -112,7 +112,7 @@
         {% if senders %}
         <div class="p-6 grid grid-cols-1 gap-4">
           {% for s in senders %}
-          <div class="rounded-2xl border border-gray-100 bg-white p-5 hover:border-indigo-200 hover:shadow-md transition-all">
+          <div class="rounded-2xl border border-gray-100 bg-white p-5 hover:border-indigo-200 hover:shadow-md transition-all surface-hover-clean">
             <div class="flex items-start justify-between gap-4">
               <div class="flex items-start gap-3 min-w-0">
                 <div class="w-10 h-10 bg-primary-light text-primary rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-indigo-100">{{ s.display_name|first|upper }}</div>
@@ -123,6 +123,17 @@
               </div>
 
               <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="sender-test-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:border-primary/30 hover:text-primary transition-colors"
+                  data-host="{{ s.smtp_host }}"
+                  data-port="{{ s.smtp_port }}"
+                  data-username="{{ s.username }}"
+                  data-from-email="{{ s.from_email }}"
+                  data-use-tls="{{ s.use_tls|yesno:'true,false' }}"
+                >
+                  <span class="sender-test-label">Test Connection</span>
+                </button>
                 {% if s.is_active %}
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -155,6 +166,16 @@
               <span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs font-semibold">TLS Disabled</span>
               {% endif %}
             </div>
+            <div class="mt-3">
+              <div class="flex justify-between text-[11px] text-gray-500 mb-1">
+                <span>Daily usage</span>
+                <span class="font-semibold text-slate-700">{{ s.emails_sent_today }}/{{ s.daily_limit }}</span>
+              </div>
+              <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                {% widthratio s.emails_sent_today s.daily_limit 100 as usage_pct %}
+                <div class="h-1.5 rounded-full {% if usage_pct > 90 %}bg-red-500{% elif usage_pct >= 70 %}bg-amber-500{% else %}bg-emerald-500{% endif %}" style="width: {{ usage_pct }}%;"></div>
+              </div>
+            </div>
           </div>
           {% endfor %}
         </div>
@@ -172,4 +193,77 @@
     </div>
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const testButtons = document.querySelectorAll('.sender-test-btn');
+    if (!testButtons.length) return;
+
+    const getCookie = function (name) {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(name + '='));
+      return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
+    };
+
+    testButtons.forEach(function (button) {
+      button.addEventListener('click', async function () {
+        const host = button.dataset.host;
+        const port = button.dataset.port;
+        const username = button.dataset.username;
+        const fromEmail = button.dataset.fromEmail;
+        const useTls = button.dataset.useTls === 'true';
+        const label = button.querySelector('.sender-test-label');
+
+        const password = window.prompt('Enter app password to test this sender connection (must match SMTP username/email account):');
+        if (!password) return;
+
+        button.disabled = true;
+        label.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle><path d="M21 12a9 9 0 00-9-9"/></svg>Testing...';
+
+        try {
+          const response = await fetch("{% url 'senders:verify_sender' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken'),
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+              host: host,
+              port: port,
+              username: username,
+              from_email: fromEmail,
+              password: password,
+              use_tls: useTls,
+            })
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            button.classList.remove('border-slate-200', 'text-slate-600');
+            button.classList.add('border-emerald-300', 'text-emerald-700', 'bg-emerald-50');
+            label.textContent = 'Connected ✓';
+            setTimeout(function () {
+              button.classList.remove('border-emerald-300', 'text-emerald-700', 'bg-emerald-50', 'border-red-300', 'text-red-700', 'bg-red-50');
+              button.classList.add('border-slate-200', 'text-slate-600');
+              label.textContent = 'Test Connection';
+            }, 2200);
+          } else {
+            const reason = data.error ? data.error : 'Connection failed';
+            button.classList.remove('border-slate-200', 'text-slate-600');
+            button.classList.add('border-red-300', 'text-red-700', 'bg-red-50');
+            label.textContent = reason;
+          }
+        } catch (err) {
+          button.classList.remove('border-slate-200', 'text-slate-600');
+          button.classList.add('border-red-300', 'text-red-700', 'bg-red-50');
+          const reason = err && err.message ? err.message : 'Network error';
+          label.textContent = reason;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}

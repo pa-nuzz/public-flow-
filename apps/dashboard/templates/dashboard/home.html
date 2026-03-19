@@ -1,58 +1,83 @@
 {% extends "base_dashboard.html" %}
 {% block title %}Dashboard — MailexaAI{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
+{% block extra_head %}
+<style>
+  @keyframes kpiFadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+{% endblock %}
 {% block content %}
 <div class="page-shell max-w-none reveal-on-scroll">
   <!-- KPI CARDS -->
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 stagger-children">
     {% for kpi in kpis %}
-    <div class="premium-surface card-elevate rounded-2xl p-6 reveal-up delay-1">
+    <div class="group premium-surface card-elevate surface-hover-clean rounded-2xl p-6 reveal-up delay-1 border-b-2 border-transparent group-hover:border-primary transition-all duration-300">
       <div class="flex items-start justify-between mb-4">
         <div class="w-9 h-9 {{ kpi.icon_bg }} rounded-lg flex items-center justify-center">
           {{ kpi.icon_svg|safe }}
         </div>
-        <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full {% if kpi.trend == 'up' %}bg-emerald-50 text-emerald-600{% else %}bg-rose-50 text-rose-600{% endif %}">
-          {% if kpi.trend == 'up' %}
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          {% else %}
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-          {% endif %}
-          {{ kpi.change }}
-        </span>
+        <div class="text-right">
+          <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full {% if kpi.trend == 'up' %}bg-emerald-50 text-emerald-600{% else %}bg-rose-50 text-rose-600{% endif %}">
+            {% if kpi.trend == 'up' %}
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            {% else %}
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            {% endif %}
+            {{ kpi.change }}
+          </span>
+          <p class="text-[10px] text-gray-400 mt-1">compared to previous window</p>
+        </div>
       </div>
-      <p class="text-2xl font-bold text-slate-900 mb-0.5">{{ kpi.value }}</p>
+      <p class="text-2xl font-bold tabular-nums text-slate-900 mb-0.5" style="animation: kpiFadeUp .3s ease both; animation-delay: {{ forloop.counter0 }}00ms;">{{ kpi.value }}</p>
       <p class="text-xs text-gray-500">{{ kpi.label }}</p>
+      <div class="mt-3 flex items-end gap-1 h-6">
+        {% if forloop.counter == 1 %}
+        <span class="w-1.5 rounded-full bg-primary/20" style="height:40%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:60%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:45%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:80%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:65%"></span>
+        {% elif forloop.counter == 2 %}
+        <span class="w-1.5 rounded-full bg-primary/20" style="height:30%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:50%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:70%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:45%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:90%"></span>
+        {% elif forloop.counter == 3 %}
+        <span class="w-1.5 rounded-full bg-primary/20" style="height:35%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:48%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:62%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:55%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:72%"></span>
+        {% else %}
+        <span class="w-1.5 rounded-full bg-primary/20" style="height:28%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:40%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:58%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:76%"></span><span class="w-1.5 rounded-full bg-primary/20" style="height:52%"></span>
+        {% endif %}
+      </div>
     </div>
     {% endfor %}
   </div>
   <!-- CHART + QUICK STATS -->
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 reveal-on-scroll">
     <!-- Bar chart -->
-    <div class="xl:col-span-2 premium-surface card-elevate section-card reveal-up delay-2">
+    <div class="xl:col-span-2 premium-surface card-elevate surface-hover-clean section-card reveal-up delay-2">
       <div class="flex items-center justify-between mb-6">
         <div>
           <h2 class="card-title">Performance — Last 7 Days</h2>
           <p class="meta-label mt-0.5">Emails sent vs opened</p>
         </div>
         <div class="flex items-center gap-4 text-xs text-gray-500">
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block"></span> Sent</span>
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-400 inline-block"></span> Opened</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-md bg-indigo-500 inline-block"></span> Sent</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-md bg-emerald-400 inline-block"></span> Opened</span>
         </div>
       </div>
-      <div class="flex items-end gap-3 h-36">
+      <div class="relative h-36">
+        <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 border-t border-dashed border-slate-100"></div>
+        <div class="flex items-end gap-3 h-36 relative z-10">
         {% for d in chart_data %}
-        <div class="flex-1 flex flex-col items-center gap-1">
+        <div class="flex-1 flex flex-col items-center gap-1" title="{{ d.day }}: {{ d.sent }} sent, {{ d.opens }} opened">
           <div class="flex items-end gap-0.5 w-full h-28">
-            <div class="flex-1 bg-indigo-500 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity js-bar-height" data-height="{{ d.sent_pct }}" title="Sent: {{ d.sent }}"></div>
-            <div class="flex-1 bg-emerald-400 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity js-bar-height" data-height="{{ d.opens_pct }}" title="Opened: {{ d.opens }}"></div>
+            <div class="flex-1 bg-indigo-500 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity js-bar-height" data-height="{{ d.sent_pct }}"></div>
+            <div class="flex-1 bg-emerald-400 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity js-bar-height" data-height="{{ d.opens_pct }}"></div>
           </div>
           <span class="text-xs text-gray-400">{{ d.day }}</span>
         </div>
         {% endfor %}
+        </div>
       </div>
     </div>
     <!-- Quick stats sidebar -->
-    <div class="premium-surface card-elevate section-card reveal-up delay-2 flex flex-col gap-5">
+    <div class="premium-surface card-elevate surface-hover-clean section-card reveal-up delay-2 flex flex-col gap-5">
       <h2 class="card-title">This Week</h2>
       {% for s in weekly_stats %}
       <div>
@@ -82,14 +107,15 @@
     </div>
   </div>
   <!-- RECENT CAMPAIGNS TABLE -->
-  <div class="premium-surface card-elevate rounded-2xl reveal-on-scroll overflow-hidden">
+  <div class="premium-surface card-elevate surface-hover-clean rounded-2xl reveal-on-scroll overflow-hidden">
     <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
       <h2 class="card-title">Recent Campaigns</h2>
-      <a href="{% url 'campaigns:campaign_list' %}" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors">
+      <a href="{% url 'campaigns:campaign_list' %}" class="text-xs font-bold text-primary border border-primary/20 px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-colors inline-flex items-center gap-1">
         View all
         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
       </a>
     </div>
+    {% if campaigns %}
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
@@ -104,10 +130,13 @@
         </thead>
         <tbody class="divide-y divide-slate-50">
           {% for c in campaigns %}
-          <tr class="hover:bg-slate-50/70 transition-colors group">
+          <tr class="surface-hover-clean hover:bg-indigo-50/20 transition-colors group">
             <td class="px-6 py-3.5"><span class="font-medium text-slate-800">{{ c.name }}</span></td>
             <td class="px-4 py-3.5">
-              <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border {{ c.status_style }}">{{ c.status }}</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border {{ c.status_style }}">
+                <span class="w-1.5 h-1.5 rounded-full inline-block mr-1 {% if c.status == 'Sent' %}bg-emerald-500{% elif c.status == 'Scheduled' %}bg-indigo-500{% elif c.status == 'Sending' %}bg-amber-500{% elif c.status == 'Draft' %}bg-slate-500{% elif c.status == 'Failed' %}bg-red-500{% else %}bg-slate-500{% endif %}"></span>
+                {{ c.status }}
+              </span>
             </td>
             <td class="px-4 py-3.5 text-gray-500">{{ c.recipients }}</td>
             <td class="px-4 py-3.5">
@@ -124,6 +153,16 @@
         </tbody>
       </table>
     </div>
+    {% else %}
+    <div class="px-8 py-14 text-center">
+      <div class="w-14 h-14 rounded-2xl mx-auto bg-primary/10 text-primary flex items-center justify-center mb-3">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </div>
+      <p class="text-slate-800 font-semibold">No campaigns yet</p>
+      <p class="text-sm text-gray-500 mt-1">Create your first campaign to start tracking delivery and opens.</p>
+      <a href="{% url 'campaigns:campaign_create' %}" class="inline-flex mt-4 items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors">Create your first campaign</a>
+    </div>
+    {% endif %}
   </div>
 </div>
 <script>

@@ -1,14 +1,27 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Count
 from .models import ContactList, Contact
 import csv
 import io
 
 @login_required
 def contact_list(request):
-    lists = ContactList.objects.filter(user=request.user)
-    return render(request, 'contacts/list.html', {'contact_lists': lists})
+    if request.method == 'POST':
+        list_id = request.POST.get('list_id')
+        contact_list_obj = ContactList.objects.filter(user=request.user, id=list_id).first()
+        if contact_list_obj:
+            list_name = contact_list_obj.name
+            contact_list_obj.delete()
+            messages.success(request, f'Contact list "{list_name}" deleted.')
+        else:
+            messages.error(request, 'Contact list not found.')
+        return redirect('contacts:list')
+
+    lists = ContactList.objects.filter(user=request.user).annotate(contact_count=Count('contacts'))
+    total_contacts = sum(cl.contact_count for cl in lists)
+    return render(request, 'contacts/list.html', {'contact_lists': lists, 'total_contacts': total_contacts})
 
 
 @login_required

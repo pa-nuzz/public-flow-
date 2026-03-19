@@ -41,9 +41,9 @@
     <div class="ambient-orb w-72 h-72 bg-indigo-300/20 -top-20 -left-12"></div>
     <div class="ambient-orb alt w-80 h-80 bg-emerald-300/15 top-36 -right-24"></div>
     <!-- NAVIGATION -->
-    <nav class="glass premium-surface border-b border-gray-200 fixed top-0 left-0 w-full z-50">
-      <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 items-center">
+    <nav class="fixed top-0 left-0 w-full z-50 border-b border-slate-200/90 bg-white/95 backdrop-blur-md shadow-sm">
+      <div class="max-w-7xl mx-auto h-[72px] px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-full items-center">
           <div class="flex items-center gap-2">
             <a href="{% if user.is_authenticated %}{% url 'dashboard:dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2">
               <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
@@ -57,9 +57,9 @@
 
           <div class="flex items-center gap-6">
             {% if user.is_authenticated %}
-            <a href="{% url 'dashboard:dashboard' %}" class="text-slate-600 hover:text-primary font-medium transition-colors">Dashboard</a>
+            <a href="{% url 'dashboard:dashboard' %}" class="nav-link-clean">Dashboard</a>
             <div class="relative group ml-2">
-              <button class="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors">
+              <button class="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors">
                 <div class="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-primary font-bold overflow-hidden">
                   {% if user.avatar %}
                   <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
@@ -68,14 +68,14 @@
                   {% endif %}
                 </div>
               </button>
-              <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <div class="px-4 py-3 border-b border-gray-50">
+              <div class="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div class="px-4 py-3 border-b border-slate-100">
                   <p class="text-sm font-semibold truncate">{{ user.get_full_name }}</p>
                   <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
                 </div>
-                <a href="{% url 'dashboard:profile' %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">My Profile</a>
-                <a href="{% url 'dashboard:settings' %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">App Settings</a>
-                <div class="border-t border-gray-50 py-1">
+                <a href="{% url 'dashboard:profile' %}" class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">My Profile</a>
+                <a href="{% url 'dashboard:settings' %}" class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">App Settings</a>
+                <div class="border-t border-slate-100 py-1">
                   <form action="{% url 'accounts:logout' %}" method="post" class="block w-full">
                     {% csrf_token %}
                     <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">Log Out</button>
@@ -84,8 +84,8 @@
               </div>
             </div>
             {% else %}
-            <a href="{% url 'accounts:login' %}" class="text-slate-600 hover:text-primary font-medium transition-colors">Log In</a>
-            <a href="{% url 'accounts:register' %}" class="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 active:translate-y-0 hover-scale-soft btn-premium">
+            <a href="{% url 'accounts:login' %}" class="nav-link-clean">Log In</a>
+            <a href="{% url 'accounts:register' %}" class="btn-premium bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 active:translate-y-0 hover-scale-soft">
               Get Started
             </a>
             {% endif %}
@@ -110,7 +110,7 @@
     {% endif %}
 
     <!-- MAIN CONTENT -->
-    <main class="flex-grow pt-24">{% block content %}{% endblock %}</main>
+    <main class="flex-grow pt-[72px]">{% block content %}{% endblock %}</main>
 
     <!-- FINAL CTA -->
   <section class="relative py-28 bg-slate-900 overflow-hidden">
@@ -126,7 +126,7 @@
       <h2 class="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-6 leading-tight">Start sending smarter emails <span class="text-indigo-400">today</span></h2>
       <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-10">Join 12,000+ businesses using MailexaAI to reach more inboxes, automate campaigns, and grow faster — all from one clean dashboard:dashboard.</p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="{% url 'dashboard:dashboard' %}" class="group inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3.5 rounded-lg shadow-lg hover:shadow-indigo-500/30 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover-scale-soft btn-premium">
+        <a href="{% if user.is_authenticated %}{% url 'dashboard:dashboard' %}{% else %}{% url 'accounts:register' %}{% endif %}" class="group btn-premium inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3.5 rounded-lg shadow-lg hover:shadow-indigo-500/30 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover-scale-soft">
           Get started for free
           <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>

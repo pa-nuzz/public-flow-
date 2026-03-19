@@ -15,7 +15,6 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            request.session.set_expiry(0)
             messages.success(request, "Account created successfully!")
             return redirect("dashboard:dashboard")
     else:
@@ -31,7 +30,6 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            request.session.set_expiry(0)
             next_url = request.POST.get('next') or request.GET.get('next') or '/dashboard/'
             from django.utils.http import url_has_allowed_host_and_scheme
             if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
@@ -45,7 +43,7 @@ def login_view(request):
 @login_required
 def logout_view(request):
     logout(request)
-    return redirect("accounts:login")
+    return redirect("home")
 
 
 

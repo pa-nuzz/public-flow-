@@ -10,6 +10,9 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 STATIC_VERSION = config('STATIC_VERSION', default='1')
 
+if not DEBUG and SECRET_KEY == 'django-insecure-test-key':
+    raise ValueError('SECRET_KEY must be set from environment in production')
+
 # Fix AutoField warnings
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -24,6 +27,7 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # In production only:
 if not DEBUG:
@@ -59,6 +63,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -118,7 +123,7 @@ else:
 # Ratelimit settings
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
-RATELIMIT_FAIL_OPEN = True
+RATELIMIT_FAIL_OPEN = False
 
 # Database (PostgreSQL)
 # DATABASES = {
@@ -197,7 +202,7 @@ AUTH_USER_MODEL = 'accounts.User'
 # Auth URLs
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
-LOGOUT_REDIRECT_URL = "/accounts/login/"
+LOGOUT_REDIRECT_URL = "/"
 
 # SMTP Encryption Key
 SMTP_ENCRYPTION_KEY = config('SMTP_ENCRYPTION_KEY', default='')
@@ -208,8 +213,8 @@ if not ENCRYPTION_KEY and not DEBUG:
     raise ValueError("ENCRYPTION_KEY must be set in production environment")
 
 # Machine Learning
-ML_MODEL_PATH = Path(config('ML_MODEL_PATH', default=str(BASE_DIR / 'ml_models' / 'spam_model.pkl')))
-ML_VECTORIZER_PATH = Path(config('ML_VECTORIZER_PATH', default=str(BASE_DIR / 'ml_models' / 'tfidf_vectorizer.pkl')))
+ML_MODEL_PATH = Path(config('ML_MODEL_PATH', default=str(BASE_DIR / 'models_ml' / 'spam_model.pkl')))
+ML_VECTORIZER_PATH = Path(config('ML_VECTORIZER_PATH', default=str(BASE_DIR / 'models_ml' / 'tfidf_vectorizer.pkl')))
 
 # Silencing django-ratelimit strict cache checks for development
 SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']

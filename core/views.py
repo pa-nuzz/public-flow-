@@ -113,6 +113,7 @@ def landing_view(request):
     {
         "name": "Free",
         "price": "रु 0",
+        "yearly_price": "रु 0",
         "period": "forever",
         "description": "Perfect for individuals and small experiments.",
         "badge": None,
@@ -129,6 +130,7 @@ def landing_view(request):
     {
         "name": "Pro",
         "price": "रु 499",
+        "yearly_price": "रु 399/mo",
         "period": "month",
         "description": "For growing teams that need power and deliverability.",
         "badge": "Most popular",
@@ -147,6 +149,7 @@ def landing_view(request):
     {
         "name": "Business",
         "price": "रु 1,499",
+        "yearly_price": "रु 1,199/mo",
         "period": "month",
         "description": "Enterprise-grade sending for high-volume operations.",
         "badge": None,

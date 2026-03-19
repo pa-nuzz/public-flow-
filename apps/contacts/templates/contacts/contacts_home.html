@@ -1,0 +1,66 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Contact Lists — Mailexa AI{% endblock %}
+{% block page_title %}Contact Lists{% endblock %}
+
+{% block content %}
+<div class="page-shell max-w-none space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="page-title">Contact Lists</h2>
+      <p class="page-subtitle">Manage your saved email lists</p>
+    </div>
+    <a href="{% url 'contacts:import_csv' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Import CSV
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="premium-surface card-elevate rounded-2xl p-5">
+      <p class="text-xs text-gray-500">Total Lists</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ contact_lists|length }}</p>
+    </div>
+    <div class="premium-surface card-elevate rounded-2xl p-5">
+      <p class="text-xs text-gray-500">Total Contacts</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ total_contacts }}</p>
+    </div>
+  </div>
+
+  {% if not contact_lists %}
+  <div class="premium-surface card-elevate rounded-2xl p-10 text-center">
+    <p class="text-sm text-gray-500">No contact lists yet.</p>
+    <a href="{% url 'contacts:import_csv' %}" class="inline-flex mt-4 items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover">Import CSV</a>
+  </div>
+  {% else %}
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for cl in contact_lists %}
+    <div class="premium-surface card-elevate rounded-2xl p-6">
+      <div>
+        <p class="font-bold text-slate-900">{{ cl.name }}</p>
+        <p class="text-xs text-slate-400 mt-1 truncate">{{ cl.description|default:'No description' }}</p>
+      </div>
+
+      <div class="mt-6">
+        <p class="text-3xl font-black text-slate-900">{{ cl.contact_count }}</p>
+        <p class="text-xs text-gray-500 mt-1">contacts</p>
+      </div>
+
+      <div class="mt-6 flex items-center justify-between gap-2">
+        <a href="{% url 'campaigns:campaign_create' %}?list={{ cl.id }}" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors">
+          Use in Campaign
+        </a>
+        <form method="post" action="{% url 'contacts:list' %}" onsubmit="return confirm('Delete this contact list? This action cannot be undone.');">
+          {% csrf_token %}
+          <input type="hidden" name="list_id" value="{{ cl.id }}">
+          <button type="submit" class="text-xs font-semibold text-red-600 hover:text-red-700">Delete</button>
+        </form>
+      </div>
+
+      <p class="text-[11px] text-gray-400 mt-3">Created {{ cl.created_at|date:"Y-m-d H:i" }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

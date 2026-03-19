@@ -1,10 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Sign In — Mailexa AI{% endblock %}
+{% block extra_head %}
+<style>
+  @keyframes logoPop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+{% endblock %}
 {% block content %}
 <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
-  <div class="auth-card">
+  <div class="auth-card shadow-[0_25px_60px_rgba(91,76,245,0.15)]">
     <div class="text-center mb-10">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-light rounded-2xl text-primary mb-6 shadow-sm">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-light rounded-2xl text-primary mb-6 shadow-sm" style="animation: logoPop .5s ease-out both;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
       </div>
       <h1 class="text-3xl font-extrabold text-[#0F1117] tracking-tight">Welcome back</h1>
@@ -18,7 +26,7 @@
       </div>
     {% endif %}
 
-    <form method="POST" class="space-y-6">
+    <form method="POST" class="space-y-6" id="loginForm">
       {% csrf_token %}
       {% load widget_tweaks %}
       
@@ -42,9 +50,11 @@
         {% if form.password.errors %}<p class="mt-2 text-sm text-red-600 font-medium">{{ form.password.errors.0 }}</p>{% endif %}
       </div>
 
-      <button type="submit" class="btn-primary w-full justify-center py-3.5 text-lg shadow-lg shadow-indigo-500/25">
-        Sign In
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      <button type="submit" id="loginSubmitBtn" class="btn-primary w-full justify-center py-3.5 text-lg shadow-lg shadow-indigo-500/25">
+        <span id="loginSubmitText" class="inline-flex items-center gap-2">
+          Sign In
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </span>
       </button>
     </form>
 
@@ -66,5 +76,30 @@
       icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
     }
   }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.auth-input').forEach(function (input) {
+      input.addEventListener('focus', function () {
+        input.classList.add('border-l-2', 'border-primary');
+      });
+      input.addEventListener('blur', function () {
+        input.classList.remove('border-l-2', 'border-primary');
+      });
+    });
+
+    var form = document.getElementById('loginForm');
+    var btn = document.getElementById('loginSubmitBtn');
+    var btnText = document.getElementById('loginSubmitText');
+    if (!form || !btn || !btnText) return;
+
+    form.addEventListener('submit', function () {
+      btn.disabled = true;
+      btnText.innerHTML = '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle><path d="M21 12a9 9 0 00-9-9"/></svg>Signing in...';
+      setTimeout(function () {
+        btn.disabled = false;
+        btnText.innerHTML = 'Sign In <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+      }, 4000);
+    });
+  });
 </script>
 {% endblock %}

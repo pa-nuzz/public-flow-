@@ -233,6 +233,7 @@ def settings_view(request):
 def profile_view(request):
     profile_form = ProfileForm(instance=request.user)
     password_form = ChangePasswordForm(request.user)
+    total_campaigns = Campaign.objects.filter(user=request.user, status='sent').count()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -254,6 +255,7 @@ def profile_view(request):
     return render(request, 'dashboard/profile.html', {
         'profile_form': profile_form,
         'password_form': password_form,
+        'total_campaigns': total_campaigns,
     })
 
 
@@ -265,3 +267,8 @@ def clear_notifications_view(request):
     request.session['dashboard_notifications_dismissed_at'] = timezone.now().isoformat()
     request.session.modified = True
     return JsonResponse({'ok': True})
+
+
+@login_required
+def templates_view(request):
+    return render(request, 'dashboard/templates_page.html', {'templates': []})

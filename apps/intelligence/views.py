@@ -3,7 +3,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
 import json, os, hashlib, logging
-from .ml_model import predict_spam_score
+from .services import analyze_spam_text
 
 logger = logging.getLogger(__name__)
 
@@ -16,33 +16,18 @@ def verify_model_integrity(path, expected_hash_env_var):
         actual = hashlib.sha256(f.read()).hexdigest()
     return actual == expected
 
-def get_risk_level(score):
-    # Score is spam probability * 100 (0-100 scale where 100 = max spam risk)
-    if score >= 80:
-        return 'High'
-    elif score >= 55:
-        return 'Medium'
-    elif score >= 30:
-        return 'Low'
-    else:
-        return 'Very Low'
-
 @login_required
 @csrf_protect
 @require_POST
 def analyze_spam(request):
     try:
         data = json.loads(request.body)
-        text = (data.get('text') or data.get('content') or '')[:10000] # Input sanitization: truncate
-        
-        # In a real scenario, we'd check integrity before loading. 
-        # Here we fix the logic as requested.
-        score = predict_spam_score(text)
+        text = data.get('text') or data.get('content') or ''
+        result = analyze_spam_text(text)
         
         return JsonResponse({
             'success': True,
-            'spam_score': score,
-            'risk_level': get_risk_level(score)
+            **result,
         })
     except Exception as e:
         logger.error(f"Spam analysis error: {str(e)}")

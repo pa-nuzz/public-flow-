@@ -6,6 +6,44 @@
 
 {% block content %}
 <div class="page-shell max-w-none">
+  <div class="premium-surface card-elevate rounded-2xl p-5 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="relative text-center">
+        <div class="w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</div>
+        <p class="text-xs text-slate-700 font-semibold mt-2">Choose Contacts</p>
+        <div class="hidden md:block absolute top-4 left-[58%] w-full h-px bg-slate-200"></div>
+      </div>
+      <div class="relative text-center">
+        <div class="w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</div>
+        <p class="text-xs text-slate-700 font-semibold mt-2">Campaign Identity</p>
+        <div class="hidden md:block absolute top-4 left-[58%] w-full h-px bg-slate-200"></div>
+      </div>
+      <div class="relative text-center">
+        <div class="w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">3</div>
+        <p class="text-xs text-slate-700 font-semibold mt-2">Message</p>
+        <div class="hidden md:block absolute top-4 left-[58%] w-full h-px bg-slate-200"></div>
+      </div>
+      <div class="text-center">
+        <div class="w-8 h-8 mx-auto rounded-full bg-slate-300 text-white text-xs font-bold flex items-center justify-center">4</div>
+        <p class="text-xs text-slate-500 font-semibold mt-2">Delivery</p>
+      </div>
+    </div>
+  </div>
+
+  {% if campaign %}
+  <div class="mb-4 flex justify-end">
+    {% if campaign.status == 'draft' %}
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Editing draft</span>
+    {% elif campaign.status == 'sent' %}
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">Editing sent campaign</span>
+    {% elif campaign.status == 'scheduled' %}
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">Editing scheduled campaign</span>
+    {% else %}
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">Editing {{ campaign.status }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <form method="post" id="campaign-form" enctype="multipart/form-data" class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
     {% csrf_token %}
 
@@ -133,6 +171,7 @@
             {{ form.subject|add_class:"auth-input"|attr:"placeholder:Your April update is ready" }}
             {% if form.subject.errors %}<p class="mt-1 text-xs text-red-600">{{ form.subject.errors.0 }}</p>{% endif %}
             <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Keep it under 60 characters for best open rates.</p>
+            <p id="subject-char-counter" class="mt-1 text-xs text-slate-400">0/60 characters</p>
           </div>
 
           <div>
@@ -175,6 +214,7 @@
             {{ form.body_text|add_class:"auth-input min-h-40"|attr:"placeholder:Hello [first_name], thanks for joining us." }}
             {% if form.body_text.errors %}<p class="mt-1 text-xs text-red-600">{{ form.body_text.errors.0 }}</p>{% endif %}
             <p class="mt-1.5 text-[10px] text-gray-400 font-medium">This text is converted to HTML automatically during send.</p>
+            <p id="body-text-counter" class="mt-1 text-xs text-slate-400">0 words · 0 chars</p>
           </div>
         </div>
       </div>
@@ -438,5 +478,45 @@ document.getElementById('analyze-spam-btn').addEventListener('click', async func
     btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Analyze with AI';
   }
 });
+
+// ── Subject / body live counters ──────────────────────────────
+(function () {
+  const subjectInput = document.getElementById('id_subject');
+  const subjectCounter = document.getElementById('subject-char-counter');
+  const bodyInput = document.getElementById('id_body_text');
+  const bodyCounter = document.getElementById('body-text-counter');
+
+  function updateSubjectCounter() {
+    if (!subjectInput || !subjectCounter) return;
+    const count = (subjectInput.value || '').length;
+    subjectCounter.textContent = `${count}/60 characters`;
+    subjectCounter.classList.remove('text-slate-400', 'text-amber-500', 'text-red-500');
+    if (count > 80) {
+      subjectCounter.classList.add('text-red-500');
+    } else if (count >= 60) {
+      subjectCounter.classList.add('text-amber-500');
+    } else {
+      subjectCounter.classList.add('text-slate-400');
+    }
+  }
+
+  function updateBodyCounter() {
+    if (!bodyInput || !bodyCounter) return;
+    const text = bodyInput.value || '';
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const chars = text.length;
+    bodyCounter.textContent = `${words} words · ${chars} chars`;
+  }
+
+  if (subjectInput) {
+    subjectInput.addEventListener('input', updateSubjectCounter);
+    updateSubjectCounter();
+  }
+
+  if (bodyInput) {
+    bodyInput.addEventListener('input', updateBodyCounter);
+    updateBodyCounter();
+  }
+})();
 </script>
 {% endblock %}

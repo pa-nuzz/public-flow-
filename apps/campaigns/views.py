@@ -76,6 +76,14 @@ def _send_campaign_with_smtp(campaign):
                     message.attach_alternative(html_body, 'text/html')
                 server.sendmail(from_header, [recipient], message.message().as_string())
                 sent_count += 1
+            except smtplib.SMTPAuthenticationError:
+                raise ValueError(
+                    "Gmail authentication failed. You must use an App Password, not your regular "
+                    "Gmail password. Generate one at: https://myaccount.google.com/apppasswords"
+                )
+            except smtplib.SMTPRecipientsRefused as exc:
+                failed_count += 1
+                last_error = f"Recipient refused: {exc}"
             except Exception as exc:
                 failed_count += 1
                 last_error = str(exc)

@@ -140,5 +140,10 @@ class Sender(models.Model):
     class Meta:
         unique_together = ('user', 'from_email')
 
+    def save(self, *args, **kwargs):
+        if self.from_email:
+            self.from_email = self.from_email.strip().lower()
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.display_name} <{self.from_email}>"

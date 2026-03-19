@@ -197,13 +197,13 @@ document.getElementById('analyze-spam-btn').addEventListener('click', async func
         val.textContent = score + '%';
         bar.style.width = score + '%';
 
-        if (score < 40) {
+        if (score < 55) {
             box.className = 'p-4 rounded-xl border border-emerald-100 bg-emerald-50';
             bar.className = 'h-2 rounded-full transition-all duration-700 bg-emerald-500';
             val.className = 'text-lg font-black tabular-nums text-emerald-600';
             verdict.className = 'text-[10px] font-medium text-emerald-700';
             verdict.textContent = 'Low risk — your content looks clean!';
-        } else if (score < 70) {
+        } else if (score < 80) {
             box.className = 'p-4 rounded-xl border border-amber-100 bg-amber-50';
             bar.className = 'h-2 rounded-full transition-all duration-700 bg-amber-500';
             val.className = 'text-lg font-black tabular-nums text-amber-600';

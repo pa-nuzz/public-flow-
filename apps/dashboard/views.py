@@ -6,6 +6,7 @@ from apps.campaigns.models import Campaign
 from apps.senders.forms import SenderForm
 from .forms import ProfileForm, ChangePasswordForm
 from django.db.models import Sum, Avg
+from django.db import IntegrityError
 from django.utils import timezone
 from datetime import timedelta
 
@@ -154,13 +155,44 @@ def settings_view(request):
             sender_form = SenderForm(request.POST)
 
             if sender_form.is_valid():
-                sender = sender_form.save(commit=False)
-                sender.user = request.user
-                raw_password = sender_form.cleaned_data['smtp_password']
-                sender.set_password(raw_password)
-                sender.save()
-                messages.success(request, 'Sender added successfully.')
-                return redirect('dashboard:settings')
+                candidate = sender_form.save(commit=False)
+                normalized_email = (candidate.from_email or '').strip().lower()
+                existing_sender = Sender.objects.filter(
+                    user=request.user,
+                    from_email__iexact=normalized_email,
+                ).first()
+
+                try:
+                    if existing_sender:
+                        existing_sender.display_name = candidate.display_name
+                        existing_sender.from_email = normalized_email
+                        existing_sender.provider = candidate.provider
+                        existing_sender.smtp_host = candidate.smtp_host
+                        existing_sender.smtp_port = candidate.smtp_port
+                        existing_sender.username = candidate.username
+                        existing_sender.use_tls = candidate.use_tls
+                        existing_sender.daily_limit = candidate.daily_limit
+                        existing_sender.is_active = True
+
+                        raw_password = sender_form.cleaned_data.get('smtp_password')
+                        if raw_password:
+                            existing_sender.set_password(raw_password)
+
+                        existing_sender.save()
+                        messages.success(request, 'Sender already existed and was updated successfully.')
+                    else:
+                        sender = candidate
+                        sender.user = request.user
+                        sender.from_email = normalized_email
+                        raw_password = sender_form.cleaned_data['smtp_password']
+                        sender.set_password(raw_password)
+                        sender.save()
+                        messages.success(request, 'Sender added successfully.')
+
+                    return redirect('dashboard:settings')
+                except IntegrityError:
+                    messages.error(request, 'A sender with this email already exists for your account. Please edit the existing sender instead.')
+                    return redirect('dashboard:settings')
             else:
                 messages.error(request, 'Please correct the errors below.')
         elif action == 'delete_sender':

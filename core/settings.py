@@ -138,11 +138,13 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     _auto_email_backend = 'django.core.mail.backends.smtp.EmailBackend'
+elif DEBUG:
+    _auto_email_backend = 'django.core.mail.backends.console.EmailBackend'
 else:
-    _auto_email_backend = 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+    raise ValueError("EMAIL_HOST_USER and EMAIL_HOST_PASSWORD must be set in production")
 
 EMAIL_BACKEND = config('EMAIL_BACKEND', default=_auto_email_backend)
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@localhost')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 SERVER_EMAIL = config('SERVER_EMAIL', default=DEFAULT_FROM_EMAIL)
 EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=20, cast=int)
 

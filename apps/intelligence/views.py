@@ -17,14 +17,15 @@ def verify_model_integrity(path, expected_hash_env_var):
     return actual == expected
 
 def get_risk_level(score):
-    if score >= 85:
-        return 'Very Low'
-    elif score >= 60:
-        return 'Low'
-    elif score >= 40:
-        return 'Medium'
-    else:
+    # Score is spam probability * 100 (0-100 scale where 100 = max spam risk)
+    if score >= 80:
         return 'High'
+    elif score >= 55:
+        return 'Medium'
+    elif score >= 30:
+        return 'Low'
+    else:
+        return 'Very Low'
 
 @login_required
 @csrf_protect

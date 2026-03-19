@@ -6,14 +6,109 @@
 
 {% block content %}
 <div class="page-shell max-w-none">
-  <form method="post" id="campaign-form" class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+  <form method="post" id="campaign-form" enctype="multipart/form-data" class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
     {% csrf_token %}
 
     <section class="xl:col-span-2 space-y-6">
-      <!-- Step 1: Campaign Identity -->
-      <div class="premium-surface card-elevate section-card">
+
+      <!-- Step 1: Choose Your Contact List -->
+      <div class="premium-surface card-elevate section-card font-sans">
         <div class="flex items-center gap-3 mb-6">
-          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">1</div>
+          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold font-sans">1</div>
+          <div>
+            <h2 class="section-title">Choose Your Contact List</h2>
+            <p class="section-subtitle">Pick a saved list, upload a CSV, or enter emails manually</p>
+          </div>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="flex gap-2 mb-5 bg-gray-100/70 p-1 rounded-xl w-fit">
+          <button type="button" id="tab-manual" onclick="switchTab('manual')"
+            class="tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-slate-800 shadow-sm flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            Manual
+          </button>
+          <button type="button" id="tab-list" onclick="switchTab('list')"
+            class="tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-slate-700 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Saved List
+          </button>
+          <button type="button" id="tab-csv" onclick="switchTab('csv')"
+            class="tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-slate-700 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            Upload CSV
+          </button>
+        </div>
+
+        <!-- Tab: Manual -->
+        <div id="panel-manual">
+          <div class="rounded-xl border-2 border-dashed border-indigo-100 bg-indigo-50/40 px-5 py-4">
+            <p class="text-sm text-slate-600 font-medium">Type or paste recipient emails directly in the <span class="text-primary font-bold">Recipients</span> field in Step 2 below.</p>
+          </div>
+          <input type="hidden" name="contact_list" value="" id="id_contact_list">
+          <input type="hidden" name="csv_emails" id="csv_emails_input">
+        </div>
+
+        <!-- Tab: Saved List -->
+        <div id="panel-list" class="hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {% for cl in contact_lists %}
+            <label class="contact-list-option relative flex items-start gap-3 p-4 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-primary/50 transition-all">
+              <input type="radio" name="contact_list_radio" value="{{ cl.id }}" class="mt-0.5 accent-indigo-600" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800 truncate">{{ cl.name }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ cl.contacts.count }} contact{{ cl.contacts.count|pluralize }}</p>
+                {% if cl.description %}
+                <p class="text-xs text-gray-400 truncate">{{ cl.description }}</p>
+                {% endif %}
+              </div>
+              <span class="absolute top-3 right-3 check-badge hidden">
+                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+              </span>
+            </label>
+            {% empty %}
+            <div class="sm:col-span-2 text-center py-8 rounded-xl border-2 border-dashed border-gray-200">
+              <p class="text-sm text-gray-400">No contact lists yet.</p>
+              <a href="{% url 'contacts:import_csv' %}" class="text-xs text-primary font-semibold hover:underline mt-1 inline-block">Create your first list →</a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Tab: CSV Upload -->
+        <div id="panel-csv" class="hidden">
+          <div id="csv-drop-zone"
+            class="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary/50 transition-all"
+            onclick="document.getElementById('csv-file-input').click()">
+            <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <p class="text-sm font-semibold text-slate-700">Drop your CSV here or <span class="text-primary">browse</span></p>
+            <p class="text-xs text-gray-400 mt-1">CSV must have an <span class="font-mono bg-gray-100 px-1 rounded">email</span> column</p>
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden" />
+          </div>
+
+          <div id="csv-preview" class="hidden mt-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-bold text-slate-700 uppercase tracking-widest">Preview</p>
+              <button type="button" onclick="clearCSV()" class="text-xs text-red-500 font-semibold hover:underline">Remove</button>
+            </div>
+            <div class="bg-gray-50 rounded-xl border border-gray-100 px-4 py-3">
+              <p class="text-sm font-semibold text-slate-800" id="csv-filename"></p>
+              <p class="text-xs text-gray-400 mt-0.5" id="csv-count"></p>
+              <div id="csv-email-preview" class="mt-2 text-xs text-gray-500 font-mono max-h-24 overflow-y-auto leading-5"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Step 2: Campaign Identity -->
+      <div class="premium-surface card-elevate section-card font-sans">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold font-sans">2</div>
           <div>
             <h2 class="section-title">Campaign Identity</h2>
             <p class="section-subtitle">How your campaign will appear</p>
@@ -53,7 +148,10 @@
           </div>
 
           <div class="md:col-span-2">
-            <label for="id_recipient_emails" class="block text-sm font-semibold text-slate-700 mb-2">Recipients</label>
+            <label for="id_recipient_emails" class="block text-sm font-semibold text-slate-700 mb-2">
+              Recipients
+              <span class="text-xs text-gray-400 font-normal ml-1">(or select a list above)</span>
+            </label>
             {{ form.recipient_emails|add_class:"auth-input min-h-24"|attr:"placeholder:alice@example.com, bob@example.com" }}
             {% if form.recipient_emails.errors %}<p class="mt-1 text-xs text-red-600">{{ form.recipient_emails.errors.0 }}</p>{% endif %}
             <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Add one or many emails (comma or new line separated).</p>
@@ -61,10 +159,10 @@
         </div>
       </div>
 
-      <!-- Step 2: Message Content -->
-      <div class="premium-surface card-elevate section-card">
+      <!-- Step 3: Message Content -->
+      <div class="premium-surface card-elevate section-card font-sans">
         <div class="flex items-center gap-3 mb-6">
-          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold">2</div>
+          <div class="w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center text-xs font-bold font-sans">3</div>
           <div>
             <h2 class="section-title">Message Content</h2>
             <p class="section-subtitle">Write your message in plain text</p>
@@ -84,9 +182,9 @@
 
     <aside class="space-y-6 xl:sticky xl:top-24">
       <!-- Delivery Settings -->
-      <div class="premium-surface card-elevate section-card">
+      <div class="premium-surface card-elevate section-card font-sans">
         <div class="flex items-center gap-3 mb-5">
-          <div class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">3</div>
+          <div class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-xs font-bold font-sans">4</div>
           <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Delivery Settings</h3>
         </div>
 
@@ -108,9 +206,9 @@
       </div>
 
       <!-- AI Spam Analysis -->
-      <div class="premium-surface card-elevate section-card">
+      <div class="premium-surface card-elevate section-card font-sans">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-[9px] italic">AI</div>
+          <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-[9px] italic font-sans">AI</div>
           <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Spam Analysis</h3>
         </div>
         <p class="text-xs text-gray-500 mb-4">Check your content against our AI model before sending.</p>
@@ -128,7 +226,8 @@
           </div>
         </div>
 
-        <button type="button" id="analyze-spam-btn" class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold hover:bg-indigo-100 transition-all border border-indigo-100">
+        <button type="button" id="analyze-spam-btn"
+          class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold hover:bg-indigo-100 transition-all border border-indigo-100">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
           Analyze with AI
         </button>
@@ -140,15 +239,18 @@
         <p class="text-xs text-slate-300 mt-2 leading-relaxed">Campaigns are saved as draft first so you can verify content before launching.</p>
 
         <div class="mt-6 flex flex-col gap-3">
-          <button type="submit" name="action" value="save_draft" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
+          <button type="submit" name="action" value="save_draft"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
             Save Draft Campaign
           </button>
-          <button type="submit" name="action" value="send_now" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30">
+          <button type="submit" name="action" value="send_now"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
             Send Campaign Now
           </button>
-          <a href="{% url 'dashboard:dashboard' %}" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-800 transition-colors text-sm font-semibold">
+          <a href="{% url 'dashboard:dashboard' %}"
+            class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-800 transition-colors text-sm font-semibold">
             Cancel
           </a>
         </div>
@@ -160,68 +262,181 @@
 
 {% block extra_scripts %}
 <script>
-const textField = document.getElementById('id_body_text');
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(tab) {
+  ['manual','list','csv'].forEach(t => {
+    document.getElementById('panel-' + t).classList.add('hidden');
+    const btn = document.getElementById('tab-' + t);
+    btn.classList.remove('bg-white','text-slate-800','shadow-sm');
+    btn.classList.add('text-gray-400');
+  });
+  document.getElementById('panel-' + tab).classList.remove('hidden');
+  const active = document.getElementById('tab-' + tab);
+  active.classList.add('bg-white','text-slate-800','shadow-sm');
+  active.classList.remove('text-gray-400');
 
+  if (tab !== 'list') {
+    document.getElementById('id_contact_list').value = '';
+    document.querySelectorAll('input[name="contact_list_radio"]').forEach(r => r.checked = false);
+  }
+  if (tab !== 'csv') {
+    document.getElementById('csv_emails_input').value = '';
+  }
+}
+
+// ── Saved list radio sync ──────────────────────────────────────
+document.querySelectorAll('input[name="contact_list_radio"]').forEach(radio => {
+  radio.addEventListener('change', function () {
+    document.getElementById('id_contact_list').value = this.value;
+    document.querySelectorAll('.contact-list-option').forEach(el => {
+      el.classList.remove('border-primary','bg-primary/5');
+      el.classList.add('border-gray-200');
+      el.querySelector('.check-badge')?.classList.add('hidden');
+    });
+    const sel = this.closest('.contact-list-option');
+    sel.classList.add('border-primary','bg-primary/5');
+    sel.classList.remove('border-gray-200');
+    sel.querySelector('.check-badge')?.classList.remove('hidden');
+  });
+});
+
+// ── CSV Upload ─────────────────────────────────────────────────
+const csvInput = document.getElementById('csv-file-input');
+const csvDropZone = document.getElementById('csv-drop-zone');
+
+csvDropZone.addEventListener('dragover', e => { e.preventDefault(); csvDropZone.classList.add('border-primary','bg-primary/5'); });
+csvDropZone.addEventListener('dragleave', () => { csvDropZone.classList.remove('border-primary','bg-primary/5'); });
+csvDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  csvDropZone.classList.remove('border-primary','bg-primary/5');
+  const file = e.dataTransfer.files[0];
+  if (file) processCSV(file);
+});
+
+csvInput.addEventListener('change', function () {
+  if (this.files[0]) processCSV(this.files[0]);
+});
+
+function processCSV(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g,''));
+    const emailIdx = headers.indexOf('email');
+
+    if (emailIdx === -1) {
+      alert('No "email" column found in CSV. Please ensure your CSV has an "email" header.');
+      return;
+    }
+
+    const emails = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim().replace(/['"]/g,''));
+      const email = cols[emailIdx]?.toLowerCase();
+      if (email && email.includes('@')) emails.push(email);
+    }
+
+    if (!emails.length) {
+      alert('No valid emails found in CSV.');
+      return;
+    }
+
+    document.getElementById('csv_emails_input').value = emails.join(',');
+    document.getElementById('csv-preview').classList.remove('hidden');
+    document.getElementById('csv-filename').textContent = file.name;
+    document.getElementById('csv-count').textContent = emails.length + ' valid email' + (emails.length !== 1 ? 's' : '') + ' found';
+    document.getElementById('csv-email-preview').textContent = emails.slice(0, 10).join('\n') + (emails.length > 10 ? `\n… and ${emails.length - 10} more` : '');
+    csvDropZone.classList.add('hidden');
+  };
+  reader.readAsText(file);
+}
+
+function clearCSV() {
+  document.getElementById('csv_emails_input').value = '';
+  document.getElementById('csv-preview').classList.add('hidden');
+  document.getElementById('csv-filename').textContent = '';
+  document.getElementById('csv-count').textContent = '';
+  document.getElementById('csv-email-preview').textContent = '';
+  document.getElementById('csv-drop-zone').classList.remove('hidden');
+  document.getElementById('csv-file-input').value = '';
+}
+
+// ── Inject CSV emails into recipient_emails on submit ──────────
+document.getElementById('campaign-form').addEventListener('submit', function() {
+  const csvEmails = document.getElementById('csv_emails_input').value;
+  if (csvEmails) {
+    const recipientField = document.getElementById('id_recipient_emails');
+    const existing = recipientField.value.trim();
+    const merged = [...new Set([
+      ...existing.split(',').map(e => e.trim()).filter(Boolean),
+      ...csvEmails.split(',')
+    ])];
+    recipientField.value = merged.join(', ');
+  }
+});
+
+// ── Spam Analysis ──────────────────────────────────────────────
 document.getElementById('analyze-spam-btn').addEventListener('click', async function() {
-    const subject = document.getElementById('id_subject')?.value || '';
-    const bodyText = document.getElementById('id_body_text')?.value || '';
-    const content = subject + ' ' + bodyText;
+  const subject = document.getElementById('id_subject')?.value || '';
+  const bodyText = document.getElementById('id_body_text')?.value || '';
+  const content = subject + ' ' + bodyText;
 
-    if (content.trim().length < 10) {
-        alert('Please write some content (subject + body) before analyzing.');
-        return;
+  if (content.trim().length < 10) {
+    alert('Please write some content (subject + body) before analyzing.');
+    return;
+  }
+
+  const btn = this;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Analyzing...';
+
+  try {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const resp = await fetch('{% url "intelligence:analyze_spam" %}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+      body: JSON.stringify({content: content})
+    });
+    const data = await resp.json();
+    const score = data.spam_score ?? 0;
+
+    const resultEl = document.getElementById('spam-result');
+    const box = document.getElementById('spam-result-box');
+    const bar = document.getElementById('spam-bar');
+    const val = document.getElementById('spam-score-val');
+    const verdict = document.getElementById('spam-verdict');
+
+    resultEl.classList.remove('hidden');
+    val.textContent = score + '%';
+    bar.style.width = score + '%';
+
+    if (score < 55) {
+      box.className = 'p-4 rounded-xl border border-emerald-100 bg-emerald-50';
+      bar.className = 'h-2 rounded-full transition-all duration-700 bg-emerald-500';
+      val.className = 'text-lg font-black tabular-nums text-emerald-600';
+      verdict.className = 'text-[10px] font-medium text-emerald-700';
+      verdict.textContent = 'Low risk — your content looks clean!';
+    } else if (score < 80) {
+      box.className = 'p-4 rounded-xl border border-amber-100 bg-amber-50';
+      bar.className = 'h-2 rounded-full transition-all duration-700 bg-amber-500';
+      val.className = 'text-lg font-black tabular-nums text-amber-600';
+      verdict.className = 'text-[10px] font-medium text-amber-700';
+      verdict.textContent = 'Moderate risk — consider revising trigger words.';
+    } else {
+      box.className = 'p-4 rounded-xl border border-red-100 bg-red-50';
+      bar.className = 'h-2 rounded-full transition-all duration-700 bg-red-500';
+      val.className = 'text-lg font-black tabular-nums text-red-600';
+      verdict.className = 'text-[10px] font-medium text-red-700';
+      verdict.textContent = 'High risk — rewrite your copy to improve deliverability.';
     }
-
-    const btn = this;
-    btn.disabled = true;
-    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Analyzing...';
-
-    try {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const resp = await fetch('{% url "intelligence:analyze_spam" %}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
-            body: JSON.stringify({content: content})
-        });
-        const data = await resp.json();
-
-        const score = data.spam_score ?? 0;
-        const risk = data.risk_level ?? 'unknown';
-        const resultEl = document.getElementById('spam-result');
-        const box = document.getElementById('spam-result-box');
-        const bar = document.getElementById('spam-bar');
-        const val = document.getElementById('spam-score-val');
-        const verdict = document.getElementById('spam-verdict');
-
-        resultEl.classList.remove('hidden');
-        val.textContent = score + '%';
-        bar.style.width = score + '%';
-
-        if (score < 55) {
-            box.className = 'p-4 rounded-xl border border-emerald-100 bg-emerald-50';
-            bar.className = 'h-2 rounded-full transition-all duration-700 bg-emerald-500';
-            val.className = 'text-lg font-black tabular-nums text-emerald-600';
-            verdict.className = 'text-[10px] font-medium text-emerald-700';
-            verdict.textContent = 'Low risk — your content looks clean!';
-        } else if (score < 80) {
-            box.className = 'p-4 rounded-xl border border-amber-100 bg-amber-50';
-            bar.className = 'h-2 rounded-full transition-all duration-700 bg-amber-500';
-            val.className = 'text-lg font-black tabular-nums text-amber-600';
-            verdict.className = 'text-[10px] font-medium text-amber-700';
-            verdict.textContent = 'Moderate risk — consider revising trigger words.';
-        } else {
-            box.className = 'p-4 rounded-xl border border-red-100 bg-red-50';
-            bar.className = 'h-2 rounded-full transition-all duration-700 bg-red-500';
-            val.className = 'text-lg font-black tabular-nums text-red-600';
-            verdict.className = 'text-[10px] font-medium text-red-700';
-            verdict.textContent = 'High risk — rewrite your copy to improve deliverability.';
-        }
-    } catch (e) {
-        alert('Analysis failed. Please try again.');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Analyze with AI';
-    }
+  } catch (e) {
+    alert('Analysis failed. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Analyze with AI';
+  }
 });
 </script>
 {% endblock %}

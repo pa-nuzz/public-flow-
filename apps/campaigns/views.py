@@ -17,6 +17,7 @@ from apps.senders.models import Sender
 from .models import Campaign, EmailEngagement
 from .forms import CampaignForm
 from django.contrib import messages
+from apps.contacts.models import ContactList
 
 def _text_to_html(text):
     if not text:
@@ -156,6 +157,14 @@ def _campaign_form_view(request, campaign=None):
             campaign_obj.user = request.user
             campaign_obj.body_html = _text_to_html(campaign_obj.body_text or '')
 
+            # Merge contact list emails into recipient_emails
+            contact_list = form.cleaned_data.get('contact_list')
+            if contact_list:
+                list_emails = contact_list.get_email_list()
+                existing = [e.strip() for e in (campaign_obj.recipient_emails or '').split(',') if e.strip()]
+                merged = list(dict.fromkeys(existing + list_emails))  # dedupe, preserve order
+                campaign_obj.recipient_emails = ', '.join(merged)
+
             if action == 'send_now':
                 campaign_obj.status = 'sending'
                 campaign_obj.total_recipients = len(campaign_obj.get_recipient_list())
@@ -167,13 +176,8 @@ def _campaign_form_view(request, campaign=None):
                     campaign_obj.bounce_count = failed_count
                     campaign_obj.status = 'sent' if sent_count > 0 else 'failed'
                     campaign_obj.save(update_fields=['sent_count', 'bounce_count', 'status', 'updated_at'])
-
                     if failed_count > 0:
-                        messages.warning(
-                            request,
-                            f'Campaign sent with partial failures. Sent: {sent_count}, failed: {failed_count}. '
-                            f'{last_error or ""}'.strip(),
-                        )
+                        messages.warning(request, f'Campaign sent with partial failures. Sent: {sent_count}, failed: {failed_count}. {last_error or ""}'.strip())
                     else:
                         messages.success(request, f'Campaign "{campaign_obj.name}" sent successfully to {sent_count} recipients.')
                     return redirect('campaigns:campaign_list')
@@ -191,16 +195,12 @@ def _campaign_form_view(request, campaign=None):
     else:
         form = CampaignForm(user=request.user, instance=campaign)
 
-    return render(
-        request,
-        'campaigns/create.html',
-        {
-            'form': form,
-            'senders': senders,
-            'campaign': campaign,
-        },
-    )
-
+    return render(request, 'campaigns/create.html', {
+        'form': form,
+        'senders': senders,
+        'campaign': campaign,
+        'contact_lists': ContactList.objects.filter(user=request.user),
+    })
 
 @login_required
 def campaign_create(request):
@@ -308,3 +308,5 @@ def campaign_track_click(request, token):
     if next_url and parsed.scheme in ('http', 'https') and parsed.netloc:
         return HttpResponseRedirect(next_url)
     return redirect('home')
+
+

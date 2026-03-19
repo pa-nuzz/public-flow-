@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={{ STATIC_VERSION }}" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -112,7 +112,7 @@
         
         <div class="flex items-center gap-6">
           <!-- Notification Bell -->
-          <div class="relative" id="notif-wrapper" data-clear-url="{% url 'dashboard:clear_notifications' %}">
+          <div class="relative" id="notif-wrapper" data-clear-url="{% url 'dashboard:clear_notifications' %}" data-csrf-token="{{ csrf_token }}">
             <button onclick="toggleNotifications()" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-primary-light rounded-xl transition-all relative hover-scale-soft">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
               <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white {% if dashboard_notification_count == 0 %}hidden{% endif %}"></span>
@@ -231,21 +231,16 @@
         dd.classList.toggle('hidden');
       }
 
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-      }
-
       function clearNotifications() {
         const wrapper = document.getElementById('notif-wrapper');
         const clearUrl = wrapper ? wrapper.dataset.clearUrl : null;
+        const csrfToken = wrapper ? wrapper.dataset.csrfToken : null;
         if (!clearUrl) return;
 
         fetch(clearUrl, {
           method: 'POST',
           headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': csrfToken,
             'X-Requested-With': 'XMLHttpRequest',
           },
         }).then(function(response) {

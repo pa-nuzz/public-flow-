@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-test-key')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+STATIC_VERSION = config('STATIC_VERSION', default='1')
 
 # Fix AutoField warnings
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -78,6 +79,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
+                'core.context_processors.static_version',
                 'apps.dashboard.context_processors.dashboard_notifications',
             ],
         },

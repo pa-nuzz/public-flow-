@@ -4,6 +4,9 @@ from . import views
 app_name = 'contacts'
 
 urlpatterns = [
-    path('', views.contact_list, name='list'),
+    path('', views.contacts_home, name='list'),
     path('import-csv/', views.import_csv, name='import_csv'),
+    path('add/', views.add_contact, name='add_contact'),
+    path('delete/<int:contact_id>/', views.delete_contact, name='delete_contact'),
+    path('delete-list/<int:list_id>/', views.delete_list, name='delete_list'),
 ]

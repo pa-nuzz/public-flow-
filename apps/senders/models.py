@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from cryptography.fernet import Fernet
-from cryptography.fernet import InvalidToken
 import base64
 import hashlib
 import logging
@@ -107,22 +106,8 @@ class Sender(models.Model):
                     self.save(update_fields=['_password'])
 
                 return decrypted
-            except InvalidToken:
-                continue
             except Exception:
                 continue
-
-        if getattr(settings, 'DEBUG', False):
-            if len(self._password) < 256 and '@' not in self._password and ' ' not in self._password:
-                logger.warning(
-                    "Sender password for '%s' appears to be stored in plain text. "
-                    "Auto-recovering in DEBUG and re-encrypting.",
-                    self.display_name,
-                )
-                plaintext = self._password
-                self.set_password(plaintext)
-                self.save(update_fields=['_password'])
-                return plaintext
 
         logger.error("Password decryption error for sender '%s'", self.display_name)
         return None

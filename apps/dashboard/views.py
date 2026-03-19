@@ -1,26 +1,29 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from datetime import timedelta
+
 from django.contrib import messages
-from apps.senders.models import Sender
+from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Sum
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
 from apps.campaigns.models import Campaign, EmailEngagement
 from apps.senders.forms import SenderForm
-from .forms import ProfileForm, ChangePasswordForm
-from django.db.models import Sum, Avg
-from django.db import IntegrityError
-from django.utils import timezone
-from datetime import timedelta
-from django.http import JsonResponse
+from apps.senders.models import Sender
+
+from .forms import ChangePasswordForm, ProfileForm
+
 
 @login_required
 def dashboard_view(request):
     user_campaigns = Campaign.objects.filter(user=request.user)
     senders = Sender.objects.filter(user=request.user, is_active=True)
-    
+
     total_sent = user_campaigns.aggregate(Sum('sent_count'))['sent_count__sum'] or 0
     total_opens = user_campaigns.aggregate(Sum('open_count'))['open_count__sum'] or 0
     avg_open_rate = round((total_opens / total_sent * 100), 1) if total_sent > 0 else 0
     avg_spam_score = user_campaigns.filter(spam_score__isnull=False).aggregate(Avg('spam_score'))['spam_score__avg']
-    
+
     recent_campaigns = user_campaigns.select_related('sender').order_by('-created_at')[:5]
 
     status_style_map = {
@@ -37,7 +40,7 @@ def dashboard_view(request):
         campaign_rows.append(
             {
                 'name': campaign.name,
-                'status': campaign.get_status_display(),
+                'status': campaign.status.title(),
                 'status_style': status_style_map.get(campaign.status, status_style_map['draft']),
                 'recipients': f"{campaign.total_recipients:,}",
                 'open_rate': f"{campaign.open_rate}%" if campaign.sent_count > 0 else '—',
@@ -186,39 +189,36 @@ def settings_view(request):
                     from_email__iexact=normalized_email,
                 ).first()
 
-                try:
-                    if existing_sender:
-                        existing_sender.display_name = candidate.display_name
-                        existing_sender.from_email = normalized_email
-                        existing_sender.provider = candidate.provider
-                        existing_sender.smtp_host = candidate.smtp_host
-                        existing_sender.smtp_port = candidate.smtp_port
-                        existing_sender.username = candidate.username
-                        existing_sender.use_tls = candidate.use_tls
-                        existing_sender.daily_limit = candidate.daily_limit
-                        existing_sender.is_active = True
+                if existing_sender:
+                    existing_sender.display_name = candidate.display_name
+                    existing_sender.from_email = normalized_email
+                    existing_sender.provider = candidate.provider
+                    existing_sender.smtp_host = candidate.smtp_host
+                    existing_sender.smtp_port = candidate.smtp_port
+                    existing_sender.username = candidate.username
+                    existing_sender.use_tls = candidate.use_tls
+                    existing_sender.daily_limit = candidate.daily_limit
+                    existing_sender.is_active = True
 
-                        raw_password = sender_form.cleaned_data.get('smtp_password')
-                        if raw_password:
-                            existing_sender.set_password(raw_password)
+                    raw_password = sender_form.cleaned_data.get('smtp_password')
+                    if raw_password:
+                        existing_sender.set_password(raw_password)
 
-                        existing_sender.save()
-                        messages.success(request, 'Sender already existed and was updated successfully.')
-                    else:
-                        sender = candidate
-                        sender.user = request.user
-                        sender.from_email = normalized_email
-                        raw_password = sender_form.cleaned_data['smtp_password']
-                        sender.set_password(raw_password)
-                        sender.save()
-                        messages.success(request, 'Sender added successfully.')
+                    existing_sender.save()
+                    messages.success(request, 'Sender already existed and was updated successfully.')
+                else:
+                    sender = candidate
+                    sender.user = request.user
+                    sender.from_email = normalized_email
+                    raw_password = sender_form.cleaned_data['smtp_password']
+                    sender.set_password(raw_password)
+                    sender.save()
+                    messages.success(request, 'Sender added successfully.')
 
-                    return redirect('dashboard:settings')
-                except IntegrityError:
-                    messages.error(request, 'A sender with this email already exists for your account. Please edit the existing sender instead.')
-                    return redirect('dashboard:settings')
-            else:
-                messages.error(request, 'Please correct the errors below.')
+                return redirect('dashboard:settings')
+
+            messages.error(request, 'Please correct the errors below.')
+
         elif action == 'delete_sender':
             sender_id = request.POST.get('sender_id')
             Sender.objects.filter(id=sender_id, user=request.user).delete()
@@ -233,22 +233,24 @@ def settings_view(request):
 def profile_view(request):
     profile_form = ProfileForm(instance=request.user)
     password_form = ChangePasswordForm(request.user)
-    
+
     if request.method == 'POST':
         action = request.POST.get('action')
+
         if action == 'update_profile':
             profile_form = ProfileForm(request.POST, request.FILES, instance=request.user)
             if profile_form.is_valid():
                 profile_form.save()
                 messages.success(request, 'Profile updated.')
                 return redirect('dashboard:profile')
+
         elif action == 'change_password':
             password_form = ChangePasswordForm(request.user, request.POST)
             if password_form.is_valid():
                 password_form.save()
                 messages.success(request, 'Password changed. Please log in again.')
                 return redirect('accounts:login')
-    
+
     return render(request, 'dashboard/profile.html', {
         'profile_form': profile_form,
         'password_form': password_form,

@@ -5,16 +5,18 @@ Includes SMTP sending, tracking pixel handling, and click redirect tracking.
 """
 
 import base64
+from datetime import timedelta
 from urllib.parse import unquote_plus, urlparse
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncHour
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from apps.senders.models import Sender
-from .models import Campaign, EmailEngagement
+from .models import Campaign, EmailClickEvent, EmailEngagement
 from .forms import CampaignForm
 from django.contrib import messages
 from apps.contacts.models import ContactList
@@ -281,6 +283,55 @@ def campaign_list(request):
     })
 
 
+@login_required
+def campaign_analytics(request, campaign_id):
+    campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
+
+    opened_engagements = campaign.engagements.filter(opened_at__isnull=False).order_by('-opened_at', 'recipient_email')
+    top_clicked_links = (
+        campaign.click_events
+        .values('clicked_url')
+        .annotate(total_clicks=Count('id'))
+        .order_by('-total_clicks', 'clicked_url')[:10]
+    )
+
+    now = timezone.now()
+    current_hour = now.replace(minute=0, second=0, microsecond=0)
+    start_hour = current_hour - timedelta(hours=23)
+
+    hourly_opens_raw = (
+        campaign.engagements
+        .filter(opened_at__gte=start_hour, opened_at__lte=now)
+        .annotate(hour=TruncHour('opened_at'))
+        .values('hour')
+        .annotate(total_opens=Count('id'))
+        .order_by('hour')
+    )
+    opens_by_hour = {item['hour']: item['total_opens'] for item in hourly_opens_raw if item['hour'] is not None}
+
+    timeline = []
+    max_opens = 1
+    for index in range(24):
+        hour_point = start_hour + timedelta(hours=index)
+        open_count = opens_by_hour.get(hour_point, 0)
+        max_opens = max(max_opens, open_count)
+        timeline.append({
+            'hour_label': timezone.localtime(hour_point).strftime('%H:%M'),
+            'opens': open_count,
+        })
+
+    for point in timeline:
+        point['height_pct'] = round((point['opens'] / max_opens) * 100) if max_opens else 0
+
+    context = {
+        'campaign': campaign,
+        'opened_engagements': opened_engagements,
+        'top_clicked_links': top_clicked_links,
+        'timeline': timeline,
+    }
+    return render(request, 'campaigns/analytics.html', context)
+
+
 def campaign_track_open(request, token):
     """Track email opens via tracking pixel.
     
@@ -337,6 +388,11 @@ def campaign_track_click(request, token):
     Returns:
         HttpResponseRedirect: Redirect to the original destination URL, or home if invalid.
     """
+    # Extract and validate destination URL from query parameter
+    next_url = unquote_plus(request.GET.get('next', '')).strip()
+    parsed = urlparse(next_url)
+    is_valid_redirect = bool(next_url and parsed.scheme in ('http', 'https') and parsed.netloc)
+
     # Fetch engagement record by tracking token
     tracking = EmailEngagement.objects.filter(tracking_token=token).select_related('campaign').first()
     if tracking:
@@ -357,11 +413,15 @@ def campaign_track_click(request, token):
         if first_open_via_click:
             update_campaign_unique_open_count(tracking.campaign)
 
-    # Extract and validate destination URL from query parameter
-    next_url = unquote_plus(request.GET.get('next', '')).strip()
-    parsed = urlparse(next_url)
+        if is_valid_redirect:
+            EmailClickEvent.objects.create(
+                campaign=tracking.campaign,
+                engagement=tracking,
+                clicked_url=next_url,
+            )
+
     # Only redirect to valid http/https URLs with proper domain (prevent open-redirect attacks)
-    if next_url and parsed.scheme in ('http', 'https') and parsed.netloc:
+    if is_valid_redirect:
         return HttpResponseRedirect(next_url)
     # Invalid URL: redirect to home page
     return redirect('home')

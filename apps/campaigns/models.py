@@ -90,3 +90,19 @@ class EmailEngagement(models.Model):
 
     def __str__(self):
         return f"{self.recipient_email} - {self.campaign.name}"
+
+
+class EmailClickEvent(models.Model):
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='click_events')
+    engagement = models.ForeignKey(EmailEngagement, on_delete=models.CASCADE, related_name='click_events')
+    clicked_url = models.URLField(max_length=2048)
+    clicked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', 'clicked_at']),
+            models.Index(fields=['campaign', 'clicked_url']),
+        ]
+
+    def __str__(self):
+        return f"{self.campaign.name} -> {self.clicked_url}"

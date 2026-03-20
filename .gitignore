@@ -208,4 +208,3 @@ pip-selfcheck.json
 .DS_Store
 
 # Machine Learning Models
-ml_models/*.pkl

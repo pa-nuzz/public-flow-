@@ -246,7 +246,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal-on-scroll">
         {% for feature in features %}
-        <div class="bg-white border border-slate-100 rounded-2xl p-7 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 reveal-up" style="animation-delay: {{ forloop.counter0 }}00ms;">
+        <div class="bg-white border border-slate-100 rounded-2xl p-7 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 reveal-up">
           <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             {{ feature.icon_svg|safe }}
           </div>
@@ -263,7 +263,7 @@
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 reveal-on-scroll">
         {% for stat in stats %}
-        <div class="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all reveal-up" style="animation-delay: {{ forloop.counter0 }}00ms;">
+        <div class="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all reveal-up">
           <div class="w-8 h-8 text-primary mb-4">{{ stat.icon_svg|safe }}</div>
           <p class="text-5xl font-black text-slate-900 tracking-tighter mb-1 stat-count" data-target="{{ stat.value }}">0</p>
           <p class="text-slate-800 font-bold text-sm mt-1">{{ stat.label }}</p>
@@ -288,7 +288,7 @@
           {% for t in testimonials %}
           <article class="flex-shrink-0 w-80 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mx-3">
             <div class="text-amber-400 text-sm">★★★★★</div>
-            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
+            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
             <div class="mt-4 flex items-center gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold {{ t.color }}">{{ t.initials }}</div>
               <div>
@@ -301,7 +301,7 @@
           {% for t in testimonials %}
           <article class="flex-shrink-0 w-80 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mx-3">
             <div class="text-amber-400 text-sm">★★★★★</div>
-            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
+            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
             <div class="mt-4 flex items-center gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold {{ t.color }}">{{ t.initials }}</div>
               <div>
@@ -317,7 +317,7 @@
   </section>
 
   <section class="bg-white py-24 relative overflow-hidden">
-    <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 24px 24px; -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);"></div>
+    <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 24px 24px; -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%); mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);"></div>
 
     <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
       <div class="text-center">
@@ -344,7 +344,7 @@
           <div class="text-slate-900 text-4xl font-black tracking-tight leading-none">
             <span class="price-display" data-monthly="{{ plan.price }}" data-yearly="{{ plan.yearly_price }}">{{ plan.price }}</span>
           </div>
-          <p class="billing-period text-slate-400 text-sm mt-1" data-monthly="/month" data-yearly="/year">/month</p>
+          <p class="billing-period text-slate-400 text-sm mt-1" data-monthly="" data-yearly="">/month</p>
           <p class="text-slate-500 text-sm mt-2 mb-6">{{ plan.description }}</p>
 
           <div class="border-t border-slate-100"></div>
@@ -628,17 +628,12 @@
 
       const statModeMap = {
         monthly: {
-          'Emails Delivered': { value: '350M+', description: 'Across all campaigns this month' },
-          'Inbox Delivery Rate': { value: '98.4%', description: 'Average this month' },
-          'Businesses Onboarded': { value: '11,200+', description: 'Active businesses this month' },
+          'Emails Delivered': { value: '350+', description: 'Across all campaigns this month' },
+          'Inbox Delivery Rate': { value: '99%', description: 'Average this month' },
+          'Businesses Onboarded': { value: '67+', description: 'Active businesses this month' },
           'Spam Reduction': { value: '92%', description: 'Average reduction this month' }
         },
-        yearly: {
-          'Emails Delivered': { value: '4.2B+', description: 'Across all campaigns this year' },
-          'Inbox Delivery Rate': { value: '98.7%', description: 'Industry-leading placement' },
-          'Businesses Onboarded': { value: '12,000+', description: 'From startups to enterprises' },
-          'Spam Reduction': { value: '94%', description: 'AI-powered suppression accuracy' }
-        }
+        
       };
 
       const parseNumberString = function (text) {
@@ -730,7 +725,7 @@
         });
 
         periods.forEach(el => {
-          el.textContent = freq === 'yearly' ? (el.dataset.yearly || '/year') : (el.dataset.monthly || '/month');
+          el.textContent = freq === 'yearly' ? (el.dataset.yearly || '') : (el.dataset.monthly || '');
         });
 
         refreshStats(freq);

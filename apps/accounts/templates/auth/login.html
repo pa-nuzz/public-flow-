@@ -37,15 +37,17 @@
       </div>
 
       <div>
-        <div class="flex justify-between items-center mb-2">
+        <div class="mb-2">
           <label class="block text-sm font-semibold text-gray-700">Password</label>
-          <a href="{% url 'accounts:password_reset' %}" class="text-sm font-semibold text-primary hover:text-primary-hover">Forgot?</a>
         </div>
         <div class="relative">
           {{ form.password|add_class:"auth-input pr-12"|attr:"placeholder:••••••••" }}
           <button type="button" onclick="togglePassword('id_password')" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
             <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
           </button>
+        </div>
+        <div class="mt-2 text-right">
+          <a href="{% url 'accounts:password_reset' %}" class="text-sm font-semibold text-primary hover:text-primary-hover">Forgot password?</a>
         </div>
         {% if form.password.errors %}<p class="mt-2 text-sm text-red-600 font-medium">{{ form.password.errors.0 }}</p>{% endif %}
       </div>

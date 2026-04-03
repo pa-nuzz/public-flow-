@@ -5,14 +5,22 @@
 
 {% block content %}
 <div class="page-shell max-w-none space-y-6 reveal-on-scroll">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h2 class="page-title">{{ campaign.name }} Analytics</h2>
       <p class="page-subtitle">Openers, top clicked links, and 24-hour open activity.</p>
     </div>
-    <a href="{% url 'campaigns:campaign_list' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:border-slate-400">
-      Back to Campaigns
-    </a>
+    <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+      <a href="{% url 'campaigns:campaign_analytics_export_csv' campaign.id %}?type=opens" class="campaign-cta-secondary flex-1 sm:flex-none">
+        Export Opens CSV
+      </a>
+      <a href="{% url 'campaigns:campaign_analytics_export_csv' campaign.id %}?type=links" class="campaign-cta-secondary flex-1 sm:flex-none">
+        Export Links CSV
+      </a>
+      <a href="{% url 'campaigns:campaign_list' %}" class="campaign-cta-secondary w-full sm:w-auto">
+        Back to Campaigns
+      </a>
+    </div>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

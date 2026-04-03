@@ -131,4 +131,4 @@ class Sender(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.display_name} <{self.from_email}>"
+        return f"{self.display_name} "

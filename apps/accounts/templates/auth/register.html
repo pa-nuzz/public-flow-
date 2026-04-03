@@ -33,7 +33,7 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
-          {{ form.first_name|add_class:"auth-input"|attr:"placeholder:John" }}
+          {{ form.first_name|add_class:"auth-input"|attr:"placeholder:John"|attr:"autofocus:autofocus" }}
           {% if form.first_name.errors %}<p class="mt-2 text-sm text-red-600 font-medium">{{ form.first_name.errors.0 }}</p>{% endif %}
         </div>
         <div>
@@ -180,5 +180,12 @@
 
   confirmInput.addEventListener('input', updatePasswordMatch);
   passInput.addEventListener('input', updatePasswordMatch);
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const firstNameInput = document.getElementById('id_first_name');
+    if (firstNameInput) {
+      firstNameInput.focus();
+    }
+  });
 </script>
 {% endblock %}

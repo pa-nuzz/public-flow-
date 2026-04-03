@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 """Dashboard views module.
 
 Provides views for rendering the main dashboard with KPIs, email engagement metrics,

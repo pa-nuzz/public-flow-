@@ -7,25 +7,25 @@
 {% block content %}
 <div class="page-shell max-w-none">
   <div class="premium-surface card-elevate rounded-2xl p-5 mb-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="relative text-center">
-        <div class="w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</div>
-        <p class="text-xs text-slate-700 font-semibold mt-2">Choose Contacts</p>
-        <div class="hidden md:block absolute top-4 left-[58%] w-full h-px bg-slate-200"></div>
+        <div class="relative z-10 w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</div>
+        <p class="relative z-10 text-xs text-slate-700 font-semibold mt-2 leading-tight">Choose Contacts</p>
+        <div class="hidden lg:block absolute z-0 top-4 left-[66%] w-[68%] h-px bg-slate-200"></div>
       </div>
       <div class="relative text-center">
-        <div class="w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</div>
-        <p class="text-xs text-slate-700 font-semibold mt-2">Campaign Identity</p>
-        <div class="hidden md:block absolute top-4 left-[58%] w-full h-px bg-slate-200"></div>
+        <div class="relative z-10 w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</div>
+        <p class="relative z-10 text-xs text-slate-700 font-semibold mt-2 leading-tight">Campaign Identity</p>
+        <div class="hidden lg:block absolute z-0 top-4 left-[66%] w-[68%] h-px bg-slate-200"></div>
       </div>
       <div class="relative text-center">
-        <div class="w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">3</div>
-        <p class="text-xs text-slate-700 font-semibold mt-2">Message</p>
-        <div class="hidden md:block absolute top-4 left-[58%] w-full h-px bg-slate-200"></div>
+        <div class="relative z-10 w-8 h-8 mx-auto rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">3</div>
+        <p class="relative z-10 text-xs text-slate-700 font-semibold mt-2 leading-tight">Message</p>
+        <div class="hidden lg:block absolute z-0 top-4 left-[66%] w-[68%] h-px bg-slate-200"></div>
       </div>
       <div class="text-center">
-        <div class="w-8 h-8 mx-auto rounded-full bg-slate-300 text-white text-xs font-bold flex items-center justify-center">4</div>
-        <p class="text-xs text-slate-500 font-semibold mt-2">Delivery</p>
+        <div class="w-8 h-8 mx-auto rounded-full bg-slate-400 text-white text-xs font-bold flex items-center justify-center">4</div>
+        <p class="text-xs text-slate-500 font-semibold mt-2 leading-tight">Delivery</p>
       </div>
     </div>
   </div>
@@ -66,7 +66,7 @@
           <div id="contact-source-hint" class="text-xs font-semibold text-slate-500 bg-slate-100 rounded-full px-3 py-1">
             Source: Manual entry
           </div>
-          <p class="text-[11px] text-slate-400">Tip: use Saved List for reliable list management, CSV for one-time imports.</p>
+          <p class="text-[11px] text-slate-400">Tip: you can select multiple lists and optionally filter to specific tags.</p>
         </div>
         <div class="flex gap-2 mb-5 bg-gray-100/70 p-1 rounded-xl w-fit">
           <button type="button" id="tab-manual" onclick="switchTab('manual')"
@@ -98,12 +98,35 @@
 
         <!-- Tab: Saved List -->
         <div id="panel-list" class="hidden">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <p class="text-xs font-bold text-slate-700 uppercase tracking-widest">Saved Lists ({{ contact_lists|length }})</p>
+            <p id="selected-lists-summary" class="text-xs text-slate-500">No lists selected</p>
+          </div>
+
+          {% if available_tags %}
+          <div class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <p class="text-xs font-bold text-emerald-700 uppercase tracking-widest">Tag Segmentation (Optional)</p>
+              <a href="{% url 'contacts:tags_manager' %}" target="_blank" class="text-[11px] font-semibold text-emerald-700 hover:underline">Manage tags</a>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {% for tag in available_tags %}
+              <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-white text-xs font-semibold text-emerald-700 cursor-pointer hover:bg-emerald-50">
+                <input type="checkbox" name="contact_tags" value="{{ tag.id }}" class="accent-emerald-600" />
+                {{ tag.name }}
+              </label>
+              {% endfor %}
+            </div>
+            <p class="mt-2 text-[11px] text-emerald-700">If tags are selected, only contacts in the chosen list(s) with those tags will be included.</p>
+          </div>
+          {% endif %}
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {% for cl in contact_lists %}
             <label class="contact-list-option relative flex items-start gap-3 p-4 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-primary/50 hover:bg-indigo-50/40 transition-all">
-              <input type="radio" name="contact_list_radio" value="{{ cl.id }}" class="mt-0.5 accent-indigo-600" />
+              <input type="checkbox" name="contact_lists" value="{{ cl.id }}" class="mt-0.5 accent-indigo-600 contact-list-checkbox" />
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-slate-800 truncate">{{ cl.name }}</p>
+                <p class="text-sm font-semibold text-slate-800 leading-snug break-words">{{ cl.name }}</p>
                 <p class="text-xs text-gray-400 mt-0.5">{{ cl.contacts.count }} contact{{ cl.contacts.count|pluralize }}</p>
                 {% if cl.description %}
                 <p class="text-xs text-gray-400 truncate">{{ cl.description }}</p>
@@ -283,9 +306,9 @@
       </div>
 
       <!-- Save Actions -->
-      <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-[0_18px_40px_rgba(30,41,59,0.45)] border border-indigo-800/40">
-        <h3 class="text-sm font-bold uppercase tracking-widest">Ready to Save</h3>
-        <p class="text-xs text-slate-300 mt-2 leading-relaxed">{% if read_only %}This campaign is in view-only mode.{% else %}Campaigns are saved as draft first so you can verify content before launching.{% endif %}</p>
+      <div class="premium-surface card-elevate section-card font-sans p-6">
+        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-900">Ready to Save</h3>
+        <p class="text-xs text-slate-500 mt-2 leading-relaxed">{% if read_only %}This campaign is in view-only mode.{% else %}Campaigns are saved as draft first so you can verify content before launching.{% endif %}</p>
 
         <div class="mt-6 flex flex-col gap-3">
           {% if not read_only %}
@@ -301,7 +324,7 @@
           </button>
           {% endif %}
           <a href="{% url 'dashboard:dashboard' %}"
-            class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-800 transition-colors text-sm font-semibold">
+            class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors text-sm font-semibold">
             {% if read_only %}Back to Dashboard{% else %}Cancel{% endif %}
           </a>
         </div>
@@ -338,7 +361,7 @@ function switchTab(tab) {
 
   if (tab !== 'list') {
     document.getElementById('id_contact_list').value = '';
-    document.querySelectorAll('input[name="contact_list_radio"]').forEach(r => r.checked = false);
+    document.querySelectorAll('.contact-list-checkbox').forEach(r => r.checked = false);
     document.querySelectorAll('.contact-list-option').forEach(el => {
       el.classList.remove('border-primary','bg-primary/5');
       el.classList.add('border-gray-200');
@@ -351,18 +374,31 @@ function switchTab(tab) {
 }
 
 // ── Saved list radio sync ──────────────────────────────────────
-document.querySelectorAll('input[name="contact_list_radio"]').forEach(radio => {
-  radio.addEventListener('change', function () {
-    document.getElementById('id_contact_list').value = this.value;
+document.querySelectorAll('.contact-list-checkbox').forEach(box => {
+  box.addEventListener('change', function () {
+    const selectedValues = Array.from(document.querySelectorAll('.contact-list-checkbox:checked')).map(el => el.value);
+    document.getElementById('id_contact_list').value = selectedValues[0] || '';
+
+    const selectedNames = Array.from(document.querySelectorAll('.contact-list-checkbox:checked')).map(el => {
+      const card = el.closest('.contact-list-option');
+      return card ? (card.querySelector('p.text-sm')?.textContent || '').trim() : '';
+    }).filter(Boolean);
+
+    const summaryEl = document.getElementById('selected-lists-summary');
+    if (summaryEl) {
+      summaryEl.textContent = selectedNames.length
+        ? `Selected: ${selectedNames.join(', ')}`
+        : 'No lists selected';
+    }
+
     document.querySelectorAll('.contact-list-option').forEach(el => {
-      el.classList.remove('border-primary','bg-primary/5');
-      el.classList.add('border-gray-200');
-      el.querySelector('.check-badge')?.classList.add('hidden');
+      const checkbox = el.querySelector('.contact-list-checkbox');
+      const isChecked = Boolean(checkbox && checkbox.checked);
+      el.classList.toggle('border-primary', isChecked);
+      el.classList.toggle('bg-primary/5', isChecked);
+      el.classList.toggle('border-gray-200', !isChecked);
+      el.querySelector('.check-badge')?.classList.toggle('hidden', !isChecked);
     });
-    const sel = this.closest('.contact-list-option');
-    sel.classList.add('border-primary','bg-primary/5');
-    sel.classList.remove('border-gray-200');
-    sel.querySelector('.check-badge')?.classList.remove('hidden');
   });
 });
 

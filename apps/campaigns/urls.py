@@ -9,6 +9,7 @@ urlpatterns = [
     path("<int:campaign_id>/analytics/", views.campaign_analytics, name="campaign_analytics"),
     path("<int:campaign_id>/view/", views.campaign_view, name="campaign_view"),
     path("<int:campaign_id>/edit/", views.campaign_edit, name="campaign_edit"),
+    path("<int:campaign_id>/duplicate/", views.campaign_duplicate, name="campaign_duplicate"),
     path("<int:campaign_id>/send/", views.campaign_send, name="campaign_send"),
     path("<int:campaign_id>/delete/", views.campaign_delete, name="campaign_delete"),
     path("track/open/<str:token>/", views.campaign_track_open, name="track_open"),

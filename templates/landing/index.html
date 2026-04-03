@@ -81,10 +81,16 @@
 
   .demo-progress > span {
     display: block;
-    width: 0%;
+    width: 100%;
     height: 100%;
     background: rgb(79 70 229);
-    transition: width .15s linear;
+    transform-origin: left;
+    animation: demoProgress 4s infinite linear;
+  }
+
+  @keyframes demoProgress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
   }
 
   @keyframes scrollLeft {
@@ -110,6 +116,10 @@
 
   .scroll-left {
     animation: scrollLeft 70s linear infinite;
+  }
+
+  .scroll-track:hover .scroll-inner {
+    animation-play-state: paused;
   }
 
   .price-display {
@@ -146,7 +156,7 @@
 {% endblock %}
 {% block content %}
 
-  <section class="min-h-screen relative overflow-hidden flex items-center pt-14 pb-20 -mt-4">
+  <section class="min-h-[80vh] relative overflow-hidden flex items-center pt-14 pb-20 -mt-4">
     <div class="absolute inset-0 pointer-events-none">
       <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[44rem] h-[22rem] bg-indigo-400/10 blur-3xl rounded-full"></div>
     </div>
@@ -187,52 +197,6 @@
         </div>
       </div>
 
-      <div class="mt-16 relative max-w-2xl mx-auto reveal-on-scroll">
-        <div class="absolute inset-0 -z-10 w-96 h-96 bg-indigo-400/10 blur-3xl rounded-full mx-auto left-1/2 -translate-x-1/2 top-6"></div>
-        <div class="absolute -top-3 right-4 bg-emerald-500 text-white rounded-full text-xs font-bold px-3 py-1.5 shadow-md">
-          98.7% Inbox Rate
-        </div>
-        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-[0_40px_80px_rgba(79,70,229,0.12)]">
-          <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            </div>
-            <div class="flex-1 h-7 rounded-lg border border-slate-200 bg-white text-slate-400 text-xs flex items-center px-3">
-              app.mailexa.ai/campaign-analytics
-            </div>
-          </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-              <div class="rounded-xl p-4 border border-emerald-100 bg-emerald-50 text-left">
-                <p class="text-[11px] text-emerald-700 uppercase tracking-wider">Delivered</p>
-                <p class="text-xl font-bold text-emerald-700">42.1K</p>
-              </div>
-              <div class="rounded-xl p-4 border border-indigo-100 bg-indigo-50 text-left">
-                <p class="text-[11px] text-indigo-700 uppercase tracking-wider">Open Rate</p>
-                <p class="text-xl font-bold text-indigo-700">48.4%</p>
-              </div>
-              <div class="rounded-xl p-4 border border-red-100 bg-red-50 text-left">
-                <p class="text-[11px] text-red-700 uppercase tracking-wider">Bounced</p>
-                <p class="text-xl font-bold text-red-700">1.2%</p>
-              </div>
-            </div>
-            <div class="h-40 border border-slate-100 rounded-xl bg-slate-50 p-4">
-              <div class="h-full flex items-end gap-2">
-                <div class="flex-1 rounded-t-md bg-primary/30" style="--bar-height: 42%; height: var(--bar-height); animation: grow .9s ease-out both;"></div>
-                <div class="flex-1 rounded-t-md bg-primary/30" style="--bar-height: 58%; height: var(--bar-height); animation: grow .9s ease-out .08s both;"></div>
-                <div class="flex-1 rounded-t-md bg-primary/30" style="--bar-height: 71%; height: var(--bar-height); animation: grow .9s ease-out .16s both;"></div>
-                <div class="flex-1 rounded-t-md bg-primary/30" style="--bar-height: 50%; height: var(--bar-height); animation: grow .9s ease-out .24s both;"></div>
-                <div class="flex-1 rounded-t-md bg-primary/60" style="--bar-height: 82%; height: var(--bar-height); animation: grow .9s ease-out .32s both;"></div>
-                <div class="flex-1 rounded-t-md bg-primary/30" style="--bar-height: 66%; height: var(--bar-height); animation: grow .9s ease-out .4s both;"></div>
-                <div class="flex-1 rounded-t-md bg-primary/30" style="--bar-height: 54%; height: var(--bar-height); animation: grow .9s ease-out .48s both;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </section>
 
@@ -246,7 +210,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal-on-scroll">
         {% for feature in features %}
-        <div class="bg-white border border-slate-100 rounded-2xl p-7 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 reveal-up">
+        <div class="bg-white border border-slate-100 rounded-2xl p-7 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 reveal-up" style="animation-delay: {{ forloop.counter0|floatformat:0 }}0ms;">
           <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             {{ feature.icon_svg|safe }}
           </div>
@@ -263,7 +227,7 @@
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 reveal-on-scroll">
         {% for stat in stats %}
-        <div class="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all reveal-up">
+        <div class="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all reveal-up" style="animation-delay: {{ forloop.counter0|floatformat:0 }}0ms;">
           <div class="w-8 h-8 text-primary mb-4">{{ stat.icon_svg|safe }}</div>
           <p class="text-5xl font-black text-slate-900 tracking-tighter mb-1 stat-count" data-target="{{ stat.value }}">0</p>
           <p class="text-slate-800 font-bold text-sm mt-1">{{ stat.label }}</p>
@@ -288,7 +252,7 @@
           {% for t in testimonials %}
           <article class="flex-shrink-0 w-80 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mx-3">
             <div class="text-amber-400 text-sm">★★★★★</div>
-            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
+            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
             <div class="mt-4 flex items-center gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold {{ t.color }}">{{ t.initials }}</div>
               <div>
@@ -301,7 +265,7 @@
           {% for t in testimonials %}
           <article class="flex-shrink-0 w-80 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mx-3">
             <div class="text-amber-400 text-sm">★★★★★</div>
-            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
+            <p class="text-slate-600 text-sm leading-relaxed mt-3" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">"{{ t.quote }}"</p>
             <div class="mt-4 flex items-center gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold {{ t.color }}">{{ t.initials }}</div>
               <div>
@@ -317,7 +281,7 @@
   </section>
 
   <section class="bg-white py-24 relative overflow-hidden">
-    <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 24px 24px; -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%); mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);"></div>
+    <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 24px 24px; -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);"></div>
 
     <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
       <div class="text-center">
@@ -344,7 +308,7 @@
           <div class="text-slate-900 text-4xl font-black tracking-tight leading-none">
             <span class="price-display" data-monthly="{{ plan.price }}" data-yearly="{{ plan.yearly_price }}">{{ plan.price }}</span>
           </div>
-          <p class="billing-period text-slate-400 text-sm mt-1" data-monthly="" data-yearly="">/month</p>
+          <p class="billing-period text-slate-400 text-sm mt-1" data-monthly="/month" data-yearly="/year">/month</p>
           <p class="text-slate-500 text-sm mt-2 mb-6">{{ plan.description }}</p>
 
           <div class="border-t border-slate-100"></div>
@@ -375,11 +339,17 @@
     <div id="demoBackdrop" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
     <div class="relative min-h-full flex items-center justify-center p-4 sm:p-6">
       <div class="w-full max-w-4xl rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
-        <div class="p-5 sm:p-6">
-          <div class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-3">
-            <p class="text-sm font-semibold text-slate-800">Live platform walkthrough</p>
-            <p class="text-xs text-slate-500 mt-1">This preview auto-plays the full campaign flow and closes when complete.</p>
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+          <div>
+            <p class="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Product demo</p>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900">How MailexaAI works</h3>
           </div>
+          <button type="button" id="closeDemoModal" class="w-9 h-9 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300 flex items-center justify-center" aria-label="Close demo">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="p-5 sm:p-6">
           <div class="demo-scene">
             <div class="demo-grid">
               <div class="space-y-3">
@@ -505,12 +475,12 @@
     (function () {
       const modal = document.getElementById('demoModal');
       const openBtn = document.getElementById('openDemoModal');
+      const closeBtn = document.getElementById('closeDemoModal');
       const backdrop = document.getElementById('demoBackdrop');
-      const progressBar = document.querySelector('.demo-progress > span');
       const demoChips = Array.from(document.querySelectorAll('.demo-step-chip'));
       const demoCaption = document.getElementById('demoStepCaption');
 
-      if (!modal || !openBtn || !backdrop) return;
+      if (!modal || !openBtn || !closeBtn || !backdrop) return;
 
       const demoSteps = [
         'Compose campaigns with audience segmentation and sender controls in one place.',
@@ -519,8 +489,6 @@
       ];
 
       let demoTimer = null;
-      let autoCloseTimer = null;
-      let progressTimer = null;
       let activeDemoStep = 0;
 
       const setDemoStep = function (index) {
@@ -544,40 +512,13 @@
           clearInterval(demoTimer);
           demoTimer = null;
         }
-        if (autoCloseTimer) {
-          clearTimeout(autoCloseTimer);
-          autoCloseTimer = null;
-        }
-        if (progressTimer) {
-          clearInterval(progressTimer);
-          progressTimer = null;
-        }
       };
 
       const startDemoCycle = function () {
         stopDemoCycle();
-
-        const totalDuration = 6900;
-        const stepDuration = 2200;
-        const startedAt = Date.now();
-
-        if (progressBar) {
-          progressBar.style.width = '0%';
-          progressTimer = setInterval(function () {
-            const elapsed = Date.now() - startedAt;
-            const pct = Math.min((elapsed / totalDuration) * 100, 100);
-            progressBar.style.width = pct + '%';
-          }, 80);
-        }
-
         demoTimer = setInterval(function () {
           setDemoStep(activeDemoStep + 1);
-        }, stepDuration);
-
-        // Auto-close after one full guided cycle for a clean, focused demo UX.
-        autoCloseTimer = setTimeout(function () {
-          closeModal();
-        }, totalDuration);
+        }, 2200);
       };
 
       const openModal = function () {
@@ -591,9 +532,6 @@
 
       const closeModal = function () {
         stopDemoCycle();
-        if (progressBar) {
-          progressBar.style.width = '0%';
-        }
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
         modal.setAttribute('aria-hidden', 'true');
@@ -601,6 +539,7 @@
       };
 
       openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
       backdrop.addEventListener('click', closeModal);
 
       demoChips.forEach(function (chip) {
@@ -628,12 +567,17 @@
 
       const statModeMap = {
         monthly: {
-          'Emails Delivered': { value: '350+', description: 'Across all campaigns this month' },
-          'Inbox Delivery Rate': { value: '99%', description: 'Average this month' },
-          'Businesses Onboarded': { value: '67+', description: 'Active businesses this month' },
+          'Emails Delivered': { value: '350M+', description: 'Across all campaigns this month' },
+          'Inbox Delivery Rate': { value: '98.4%', description: 'Average this month' },
+          'Businesses Onboarded': { value: '11,200+', description: 'Active businesses this month' },
           'Spam Reduction': { value: '92%', description: 'Average reduction this month' }
         },
-        
+        yearly: {
+          'Emails Delivered': { value: '4.2B+', description: 'Across all campaigns this year' },
+          'Inbox Delivery Rate': { value: '98.7%', description: 'Industry-leading placement' },
+          'Businesses Onboarded': { value: '12,000+', description: 'From startups to enterprises' },
+          'Spam Reduction': { value: '94%', description: 'AI-powered suppression accuracy' }
+        }
       };
 
       const parseNumberString = function (text) {
@@ -725,7 +669,7 @@
         });
 
         periods.forEach(el => {
-          el.textContent = freq === 'yearly' ? (el.dataset.yearly || '') : (el.dataset.monthly || '');
+          el.textContent = freq === 'yearly' ? (el.dataset.yearly || '/year') : (el.dataset.monthly || '/month');
         });
 
         refreshStats(freq);

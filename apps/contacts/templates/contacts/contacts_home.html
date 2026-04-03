@@ -19,6 +19,11 @@
       </div>
     </div>
     <div class="flex gap-2">
+      <a href="{% url 'contacts:tags_manager' %}"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-sm font-semibold shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5.586a1 1 0 01.707.293l7.414 7.414a2 2 0 010 2.828l-7.172 7.172a2 2 0 01-2.828 0L3.293 13.293A1 1 0 013 12.586V7a4 4 0 014-4z"/></svg>
+        Manage Tags
+      </a>
       <a href="{% url 'contacts:import_csv' %}"
         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-gray-50 transition-colors text-sm font-semibold shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
@@ -88,13 +93,51 @@
       </form>
     </div>
 
+    <form method="post" action="{% url 'contacts:bulk_update_contact_tags' %}" id="bulk-tag-form" class="px-6 py-4 border-b border-gray-100 bg-slate-50/40 space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="selected_contact_ids" id="selected-contact-ids" value="">
+
+      <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:justify-between">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-xs font-semibold text-slate-500">Selected: <span id="selected-contact-count">0</span></span>
+          <select name="operation" id="bulk-operation" class="auth-input py-2 text-sm min-w-[220px]">
+            <option value="add">Add selected tags</option>
+            <option value="replace">Replace all tags with selected tags</option>
+            <option value="remove">Remove selected tags</option>
+            <option value="clear">Clear all tags</option>
+          </select>
+        </div>
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors shadow-sm">
+          Apply Tag Action
+        </button>
+      </div>
+
+      {% if available_tags %}
+      <div id="bulk-tags-wrap" class="flex flex-wrap gap-2">
+        {% for tag in available_tags %}
+        <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-white text-xs font-semibold text-emerald-700 cursor-pointer hover:bg-emerald-50">
+          <input type="checkbox" name="tag_ids" value="{{ tag.id }}" class="accent-emerald-600 bulk-tag-checkbox" />
+          {{ tag.name }}
+        </label>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-slate-500">No tags available yet. <a href="{% url 'contacts:tags_manager' %}" class="text-primary font-semibold hover:underline">Create tags first</a>.</p>
+      {% endif %}
+      <p class="text-[11px] text-slate-400">Use this to add contacts into tags, transfer them to another tag set, or remove tags from existing contacts.</p>
+    </form>
+
     <div class="overflow-x-auto">
       <table class="w-full">
         <thead>
           <tr class="border-b border-gray-100 bg-gray-50/50">
+            <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <input type="checkbox" id="select-all-contacts" class="accent-indigo-600" title="Select all visible contacts" />
+            </th>
             <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Name</th>
             <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</th>
             <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">List</th>
+            <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tags</th>
             <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Added</th>
             <th class="px-6 py-3"></th>
           </tr>
@@ -102,6 +145,9 @@
         <tbody class="divide-y divide-gray-50">
           {% for contact in all_contacts %}
           <tr class="surface-hover-clean hover:bg-gray-50/50 transition-colors">
+            <td class="px-6 py-3.5">
+              <input type="checkbox" class="contact-selector accent-indigo-600" value="{{ contact.id }}" aria-label="Select {{ contact.email }}" />
+            </td>
             <td class="px-6 py-3.5">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -122,6 +168,15 @@
                 {{ contact.contact_list.name }}
               </span>
             </td>
+            <td class="px-6 py-3.5">
+              <div class="flex flex-wrap gap-1.5">
+                {% for tag in contact.tags.all %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-100">{{ tag.name }}</span>
+                {% empty %}
+                <span class="text-xs text-gray-400">—</span>
+                {% endfor %}
+              </div>
+            </td>
             <td class="px-6 py-3.5 text-xs text-gray-400">{{ contact.created_at|date:"M d, Y" }}</td>
             <td class="px-6 py-3.5 text-right">
               <form method="post" action="{% url 'contacts:delete_contact' contact.id %}"
@@ -136,7 +191,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5" class="px-6 py-16 text-center">
+            <td colspan="7" class="px-6 py-16 text-center">
               <div class="flex flex-col items-center gap-2">
                 <svg class="w-10 h-10 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 <p class="text-sm text-gray-400 font-medium">No contacts found.</p>
@@ -184,6 +239,11 @@
           {% endfor %}
         </select>
       </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Tags (optional)</label>
+        <input type="text" name="tags" class="auth-input py-2 text-sm" placeholder="vip, leads, webinar" />
+        <p class="mt-1 text-[11px] text-slate-400">Separate multiple tags with commas.</p>
+      </div>
       <div class="flex gap-3 pt-2">
         <button type="submit"
           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/20">
@@ -207,5 +267,77 @@
       document.getElementById('add-contact-modal')?.classList.add('hidden');
     }
   });
+
+  const selectAllContacts = document.getElementById('select-all-contacts');
+  const contactSelectors = document.querySelectorAll('.contact-selector');
+  const selectedContactIdsInput = document.getElementById('selected-contact-ids');
+  const selectedContactCount = document.getElementById('selected-contact-count');
+  const bulkTagForm = document.getElementById('bulk-tag-form');
+  const bulkOperation = document.getElementById('bulk-operation');
+  const bulkTagsWrap = document.getElementById('bulk-tags-wrap');
+
+  function refreshSelectedContacts() {
+    const selectedIds = Array.from(contactSelectors)
+      .filter((checkbox) => checkbox.checked)
+      .map((checkbox) => checkbox.value);
+
+    if (selectedContactIdsInput) {
+      selectedContactIdsInput.value = selectedIds.join(',');
+    }
+    if (selectedContactCount) {
+      selectedContactCount.textContent = String(selectedIds.length);
+    }
+
+    if (selectAllContacts) {
+      const allChecked = contactSelectors.length > 0 && selectedIds.length === contactSelectors.length;
+      selectAllContacts.checked = allChecked;
+    }
+  }
+
+  if (selectAllContacts) {
+    selectAllContacts.addEventListener('change', function () {
+      contactSelectors.forEach((checkbox) => {
+        checkbox.checked = selectAllContacts.checked;
+      });
+      refreshSelectedContacts();
+    });
+  }
+
+  contactSelectors.forEach((checkbox) => {
+    checkbox.addEventListener('change', refreshSelectedContacts);
+  });
+
+  if (bulkOperation && bulkTagsWrap) {
+    const syncTagInputsForOperation = () => {
+      const requiresTags = bulkOperation.value !== 'clear';
+      bulkTagsWrap.style.opacity = requiresTags ? '1' : '0.5';
+      bulkTagsWrap.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.disabled = !requiresTags;
+      });
+    };
+    bulkOperation.addEventListener('change', syncTagInputsForOperation);
+    syncTagInputsForOperation();
+  }
+
+  if (bulkTagForm) {
+    bulkTagForm.addEventListener('submit', function (event) {
+      refreshSelectedContacts();
+      if (!selectedContactIdsInput || !selectedContactIdsInput.value) {
+        event.preventDefault();
+        alert('Please select at least one contact.');
+        return;
+      }
+
+      if (bulkOperation && bulkOperation.value !== 'clear') {
+        const anyTagSelected = Array.from(document.querySelectorAll('.bulk-tag-checkbox')).some((checkbox) => checkbox.checked);
+        if (!anyTagSelected) {
+          event.preventDefault();
+          alert('Please select at least one tag.');
+        }
+      }
+    });
+  }
+
+  refreshSelectedContacts();
 </script>
 {% endblock %}

@@ -19,7 +19,7 @@ from apps.senders.models import Sender
 from .models import Campaign, EmailClickEvent, EmailEngagement
 from .forms import CampaignForm
 from django.contrib import messages
-from apps.contacts.models import ContactList
+from apps.contacts.models import ContactList, Contact, ContactTag
 from .services import (
     text_to_html,
     apply_campaign_spam_signals,
@@ -78,11 +78,43 @@ def _campaign_form_view(request, campaign=None, read_only=False):
             # Apply spam filter heuristics and calculate spam score
             apply_campaign_spam_signals(campaign_obj)
 
-            # Merge contact list emails (if selected) with manually entered recipient_emails
+            # Merge selected saved list emails and optional tag-segmented contacts.
+            selected_list_ids = [value for value in request.POST.getlist('contact_lists') if value.isdigit()]
+            selected_tag_ids = [value for value in request.POST.getlist('contact_tags') if value.isdigit()]
+
+            if selected_list_ids:
+                selected_lists = ContactList.objects.filter(user=request.user, id__in=selected_list_ids)
+                if selected_tag_ids:
+                    tagged_emails = Contact.objects.filter(
+                        contact_list__in=selected_lists,
+                        is_active=True,
+                        tags__id__in=selected_tag_ids,
+                    ).values_list('email', flat=True).distinct()
+                    campaign_obj.recipient_emails = merge_recipient_emails(
+                        campaign_obj.recipient_emails,
+                        list(tagged_emails),
+                    )
+                else:
+                    for selected_list in selected_lists:
+                        campaign_obj.recipient_emails = merge_recipient_emails(
+                            campaign_obj.recipient_emails,
+                            selected_list.get_email_list(),
+                        )
+            elif selected_tag_ids:
+                tagged_emails = Contact.objects.filter(
+                    contact_list__user=request.user,
+                    is_active=True,
+                    tags__id__in=selected_tag_ids,
+                ).values_list('email', flat=True).distinct()
+                campaign_obj.recipient_emails = merge_recipient_emails(
+                    campaign_obj.recipient_emails,
+                    list(tagged_emails),
+                )
+
+            # Backward compatibility for older single-list input.
             contact_list = form.cleaned_data.get('contact_list')
             if contact_list:
-                list_emails = contact_list.get_email_list()
-                campaign_obj.recipient_emails = merge_recipient_emails(campaign_obj.recipient_emails, list_emails)
+                campaign_obj.recipient_emails = merge_recipient_emails(campaign_obj.recipient_emails, contact_list.get_email_list())
 
             # Handle "Send Now" action: immediately send campaign via SMTP
             if action == 'send_now':
@@ -125,6 +157,7 @@ def _campaign_form_view(request, campaign=None, read_only=False):
         'senders': senders,
         'campaign': campaign,
         'contact_lists': ContactList.objects.filter(user=request.user),
+        'available_tags': ContactTag.objects.filter(user=request.user),
     })
 
 
@@ -281,6 +314,31 @@ def campaign_list(request):
         'status_counts': status_counts,
         'email_totals': email_totals,
     })
+
+
+@login_required
+def campaign_duplicate(request, campaign_id):
+    source_campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
+
+    duplicate = Campaign.objects.create(
+        user=request.user,
+        sender=source_campaign.sender,
+        name=f"{source_campaign.name} (Copy)",
+        subject=source_campaign.subject,
+        body_html=source_campaign.body_html,
+        body_text=source_campaign.body_text,
+        recipient_emails=source_campaign.recipient_emails,
+        from_name=source_campaign.from_name,
+        reply_to=source_campaign.reply_to,
+        status='draft',
+        scheduled_at=None,
+        total_recipients=source_campaign.total_recipients,
+        spam_score=source_campaign.spam_score,
+        spam_risk=source_campaign.spam_risk,
+    )
+
+    messages.success(request, f'Campaign duplicated as "{duplicate.name}".')
+    return redirect('campaigns:campaign_edit', campaign_id=duplicate.id)
 
 
 @login_required

@@ -1,5 +1,7 @@
 import os
+import sys
 from pathlib import Path
+from urllib.parse import urlparse
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -7,7 +9,66 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-test-key')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+def parse_csv_env(var, default=''):
+    val = config(var, default=default)
+    return [v.strip() for v in val.split(',') if v.strip()]
+
+ALLOWED_HOSTS = parse_csv_env('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+
+# --- Explicit CSRF_TRUSTED_ORIGINS logic for ngrok/dev ---
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+CSRF_TRUSTED_ORIGINS = [x.strip() for x in CSRF_TRUSTED_ORIGINS if x.strip()]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [
+        'https://*.ngrok-free.app',
+        'https://*.ngrok.io'
+    ]
+    ALLOWED_HOSTS += ['*.ngrok-free.app', '*.ngrok.io']
+NGROK_DOMAIN = config('NGROK_DOMAIN', default='').strip()
+PUBLIC_BASE_URL = config('PUBLIC_BASE_URL', default='http://127.0.0.1:8000').strip().rstrip('/')
+
+def _normalize_host(value: str) -> str:
+    if not value:
+        return ''
+    parsed = urlparse(value if '://' in value else f'https://{value}')
+    return parsed.netloc or parsed.path
+
+ngrok_host = _normalize_host(NGROK_DOMAIN)
+if ngrok_host and ngrok_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(ngrok_host)
+
+if PUBLIC_BASE_URL:
+    public_host = urlparse(PUBLIC_BASE_URL).netloc
+    if public_host and public_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(public_host)
+
+# Add wildcard ngrok domains for dev convenience
+for wildcard_host in ['.ngrok-free.dev', '.ngrok.io']:
+    if wildcard_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(wildcard_host)
+
+# CSRF trusted origins
+if ngrok_host:
+    ngrok_origin = f'https://{ngrok_host}'
+    if ngrok_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(ngrok_origin)
+
+if PUBLIC_BASE_URL and PUBLIC_BASE_URL.startswith('https://'):
+    if PUBLIC_BASE_URL not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(PUBLIC_BASE_URL)
+
+for default_origin in [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://*.ngrok-free.dev',
+    'https://*.ngrok.io',
+]:
+    if default_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(default_origin)
+
+# Remove duplicates and empty strings
+ALLOWED_HOSTS = list({h for h in ALLOWED_HOSTS if h})
+CSRF_TRUSTED_ORIGINS = list({o for o in CSRF_TRUSTED_ORIGINS if o})
 STATIC_VERSION = config('STATIC_VERSION', default='1')
 
 if not DEBUG and SECRET_KEY == 'django-insecure-test-key':
@@ -29,14 +90,31 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# In production only:
-if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+IS_RUNSERVER = 'runserver' in sys.argv
+
+# Never force HTTPS for local development server execution.
+# This prevents accidental browser HTTPS/HSTS loops on localhost.
+if DEBUG or IS_RUNSERVER:
+    FORCE_HTTPS = False
+else:
+    FORCE_HTTPS = config('FORCE_HTTPS', default=True, cast=bool)
+
+SECURE_SSL_REDIRECT = False if (DEBUG or IS_RUNSERVER) else FORCE_HTTPS
+SESSION_COOKIE_SECURE = False if (DEBUG or IS_RUNSERVER) else config('SESSION_COOKIE_SECURE', default=FORCE_HTTPS, cast=bool)
+CSRF_COOKIE_SECURE = False if (DEBUG or IS_RUNSERVER) else config('CSRF_COOKIE_SECURE', default=FORCE_HTTPS, cast=bool)
+
+# Trust reverse proxy protocol headers (ngrok / load balancers)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# In HTTPS-enforced environments only:
+if FORCE_HTTPS:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = True
+else:
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -62,6 +140,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middleware.DevHTTPMiddleware',  # Remove HSTS headers in dev to prevent HTTPS caching
     'django.middleware.security.SecurityMiddleware',
     'core.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -70,6 +149,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -143,7 +223,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 # Static files
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -174,7 +254,7 @@ SERVER_EMAIL = config('SERVER_EMAIL', default=DEFAULT_FROM_EMAIL)
 EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=20, cast=int)
 
 # Public base URL used for email tracking links (opens/clicks). Example: https://your-domain.com
-TRACKING_BASE_URL = config('TRACKING_BASE_URL', default='').strip()
+TRACKING_BASE_URL = config('TRACKING_BASE_URL', default=PUBLIC_BASE_URL).strip().rstrip('/')
 
 # Media files
 MEDIA_URL = '/media/'
@@ -222,7 +302,6 @@ ML_VECTORIZER_PATH = Path(config('ML_VECTORIZER_PATH', default=str(BASE_DIR / 'm
 # Silencing django-ratelimit strict cache checks for development
 SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
 
-import os
 import base64
 import hashlib
 from dotenv import load_dotenv

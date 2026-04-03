@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" width="52" height="52">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="88" height="88">
   <defs>
-    <linearGradient id="iconGradMark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6D63F8"/>
-      <stop offset="100%" stop-color="#4338CA"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6D5FED"/>
+      <stop offset="100%" stop-color="#3D30B8"/>
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="52" height="52" rx="13" fill="url(#iconGradMark)"/>
-  <rect x="1" y="1" width="50" height="50" rx="12" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
-  <path d="M12 40 L12 13 L26 27 L40 13 L40 40"
-        fill="none" stroke="white" stroke-width="4.2"
+  <rect width="44" height="44" rx="11" fill="url(#bg)"/>
+  <rect x="0.75" y="0.75" width="42.5" height="42.5" rx="10.4" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="1"/>
+  <path d="M11 32 L11 12 L22 21 L33 12 L33 32"
+        fill="none" stroke="white" stroke-width="3.2"
         stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

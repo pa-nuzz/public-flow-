@@ -4,33 +4,33 @@
 {% block page_title %}Contacts{% endblock %}
 
 {% block content %}
-<div class="page-shell max-w-none space-y-6">
+<div class="page-shell max-w-none space-y-6 overflow-x-hidden">
 
   <!-- Stats + Actions Row -->
-  <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-    <div class="flex gap-4">
-      <div class="premium-surface card-elevate surface-hover-clean section-card py-4 px-5 min-w-[140px]">
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[320px]">
+      <div class="premium-surface card-elevate surface-hover-clean section-card py-4 px-5 min-w-0">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Contacts</p>
         <p class="text-2xl font-black text-slate-900">{{ total }}</p>
       </div>
-      <div class="premium-surface card-elevate surface-hover-clean section-card py-4 px-5 min-w-[140px]">
+      <div class="premium-surface card-elevate surface-hover-clean section-card py-4 px-5 min-w-0">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Lists</p>
         <p class="text-2xl font-black text-slate-900">{{ contact_lists.count }}</p>
       </div>
     </div>
-    <div class="flex gap-2">
+    <div class="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
       <a href="{% url 'contacts:tags_manager' %}"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-sm font-semibold shadow-sm">
+        class="inline-flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-sm font-semibold shadow-sm sm:flex-none">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5.586a1 1 0 01.707.293l7.414 7.414a2 2 0 010 2.828l-7.172 7.172a2 2 0 01-2.828 0L3.293 13.293A1 1 0 013 12.586V7a4 4 0 014-4z"/></svg>
         Manage Tags
       </a>
       <a href="{% url 'contacts:import_csv' %}"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-gray-50 transition-colors text-sm font-semibold shadow-sm">
+        class="inline-flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-gray-50 transition-colors text-sm font-semibold shadow-sm sm:flex-none">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
         Import CSV
       </a>
       <button onclick="document.getElementById('add-contact-modal').classList.remove('hidden')"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/20">
+        class="inline-flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/20 sm:flex-none">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Add Contact
       </button>

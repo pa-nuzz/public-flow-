@@ -18,17 +18,37 @@
       <h2 class="page-title">Campaign</h2>
       <p class="page-subtitle">Track drafts, scheduled sends, and delivery results.</p>
     </div>
-    <a href="{% url 'campaigns:campaign_create' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-primary-hover transition-colors" {% if status_counts.all == 0 %}style="animation: softPulse 2s ease-in-out infinite;"{% endif %}>
+    <a href="{% url 'campaigns:campaign_create' %}" class="btn-action btn-action-primary inline-flex whitespace-nowrap">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      New Campaign
+      Add Campaign
     </a>
   </div>
 
+  <form id="campaign-filter-form" method="get" class="premium-surface card-elevate rounded-2xl p-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+    <input type="hidden" id="status-filter" name="status" value="{{ filters.status|default:'all' }}" />
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold text-slate-600 mb-1" for="id_q">Search</label>
+      <input id="id_q" name="q" type="text" value="{{ filters.q }}" placeholder="Search campaign name or subject" class="auth-input" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1" for="id_start">From</label>
+      <input id="id_start" name="start" type="date" value="{{ filters.start }}" class="auth-input" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1" for="id_end">To</label>
+      <input id="id_end" name="end" type="date" value="{{ filters.end }}" class="auth-input" />
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover">Apply</button>
+      <a href="{% url 'campaigns:campaign_list' %}" class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Reset</a>
+    </div>
+  </form>
+
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" class="status-filter-tab bg-primary text-white rounded-lg px-4 py-2 text-sm font-bold inline-flex items-center gap-2 border border-primary" data-status="all">All <span class="text-[11px] bg-white/20 rounded-full px-2 py-0.5">{{ status_counts.all }}</span></button>
-    <button type="button" class="status-filter-tab text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-900 rounded-lg px-4 py-2 text-sm font-medium inline-flex items-center gap-2" data-status="scheduled">Scheduled <span class="text-[11px] rounded-full px-2 py-0.5 {% if status_counts.scheduled == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.scheduled }}</span></button>
-    <button type="button" class="status-filter-tab text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-900 rounded-lg px-4 py-2 text-sm font-medium inline-flex items-center gap-2" data-status="sent">Sent <span class="text-[11px] rounded-full px-2 py-0.5 {% if status_counts.sent == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.sent }}</span></button>
-    <button type="button" class="status-filter-tab text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-900 rounded-lg px-4 py-2 text-sm font-medium inline-flex items-center gap-2" data-status="failed">Failed <span class="text-[11px] rounded-full px-2 py-0.5 {% if status_counts.failed == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.failed }}</span></button>
+    <button type="button" class="status-filter-tab rounded-lg px-4 py-2 text-sm inline-flex items-center gap-2 border {% if filters.status == 'all' %}bg-primary text-white font-bold border-primary{% else %}text-slate-700 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-900 font-medium{% endif %}" data-status="all">All <span class="text-[11px] {% if filters.status == 'all' %}bg-white/20{% else %}bg-slate-100 text-slate-700{% endif %} rounded-full px-2 py-0.5">{{ status_counts.all }}</span></button>
+    <button type="button" class="status-filter-tab rounded-lg px-4 py-2 text-sm inline-flex items-center gap-2 border {% if filters.status == 'scheduled' %}bg-primary text-white font-bold border-primary{% else %}text-slate-700 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-900 font-medium{% endif %}" data-status="scheduled">Scheduled <span class="text-[11px] rounded-full px-2 py-0.5 {% if filters.status == 'scheduled' %}bg-white/20{% elif status_counts.scheduled == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.scheduled }}</span></button>
+    <button type="button" class="status-filter-tab rounded-lg px-4 py-2 text-sm inline-flex items-center gap-2 border {% if filters.status == 'sent' %}bg-primary text-white font-bold border-primary{% else %}text-slate-700 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-900 font-medium{% endif %}" data-status="sent">Sent <span class="text-[11px] rounded-full px-2 py-0.5 {% if filters.status == 'sent' %}bg-white/20{% elif status_counts.sent == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.sent }}</span></button>
+    <button type="button" class="status-filter-tab rounded-lg px-4 py-2 text-sm inline-flex items-center gap-2 border {% if filters.status == 'failed' %}bg-primary text-white font-bold border-primary{% else %}text-slate-700 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-900 font-medium{% endif %}" data-status="failed">Failed <span class="text-[11px] rounded-full px-2 py-0.5 {% if filters.status == 'failed' %}bg-white/20{% elif status_counts.failed == 0 %}bg-slate-200 text-slate-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ status_counts.failed }}</span></button>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-5 stagger-children">
@@ -83,6 +103,12 @@
                   <button type="submit" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover">Send</button>
                 </form>
                 {% endif %}
+                {% if campaign.total_recipients > campaign.sent_count %}
+                <form method="post" action="{% url 'campaigns:campaign_retry_failed' campaign.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 text-xs font-semibold hover:bg-amber-100 hover:border-amber-300" title="Retries only recipients that have not been successfully sent yet.">Retry Failed</button>
+                </form>
+                {% endif %}
                 <form method="post" action="{% url 'campaigns:campaign_delete' campaign.id %}" onsubmit="return confirm('Delete this campaign? This action cannot be undone.');">
                   {% csrf_token %}
                   <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-red-50 text-xs font-semibold hover:bg-red-100 hover:border-red-300">Delete</button>
@@ -93,8 +119,13 @@
           {% empty %}
           <tr>
             <td colspan="6" class="px-6 py-12 text-center">
+              {% if filters.q or filters.start or filters.end or filters.status != 'all' %}
+              <p class="text-sm text-gray-500">No campaigns matched your current filters.</p>
+              <a href="{% url 'campaigns:campaign_list' %}" class="inline-flex mt-4 items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Clear filters</a>
+              {% else %}
               <p class="text-sm text-gray-500">No campaigns yet. Create your first one to get started.</p>
               <a href="{% url 'campaigns:campaign_create' %}" class="inline-flex mt-4 items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover">Create campaign</a>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -102,35 +133,33 @@
       </table>
     </div>
   </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="flex items-center justify-between gap-3">
+    <p class="text-xs text-slate-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+    <div class="flex items-center gap-2">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&q={{ filters.q|urlencode }}&status={{ filters.status|urlencode }}&start={{ filters.start|urlencode }}&end={{ filters.end|urlencode }}" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&q={{ filters.q|urlencode }}&status={{ filters.status|urlencode }}&start={{ filters.start|urlencode }}&end={{ filters.end|urlencode }}" class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script>
   (function () {
+    const filterForm = document.getElementById('campaign-filter-form');
+    const statusInput = document.getElementById('status-filter');
     const tabs = document.querySelectorAll('.status-filter-tab');
-    const rows = document.querySelectorAll('.campaign-row');
-
-    function setActiveTab(tab) {
-      tabs.forEach((button) => {
-        button.classList.remove('bg-primary', 'text-white', 'font-bold', 'border-primary');
-        button.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200', 'hover:border-slate-300', 'hover:text-slate-900', 'font-medium');
-      });
-      tab.classList.add('bg-primary', 'text-white', 'font-bold', 'border-primary');
-      tab.classList.remove('bg-white', 'text-slate-700', 'border-slate-200', 'hover:border-slate-300', 'hover:text-slate-900', 'font-medium');
-    }
-
-    function filterRows(status) {
-      rows.forEach((row) => {
-        const rowStatus = (row.dataset.status || '').toLowerCase();
-        const shouldShow = status === 'all' || rowStatus === status;
-        row.classList.toggle('hidden', !shouldShow);
-      });
-    }
 
     tabs.forEach((tab) => {
       tab.addEventListener('click', function () {
-        const status = (this.dataset.status || 'all').toLowerCase();
-        setActiveTab(this);
-        filterRows(status);
+        if (!filterForm || !statusInput) return;
+        statusInput.value = (this.dataset.status || 'all').toLowerCase();
+        filterForm.submit();
       });
     });
   })();

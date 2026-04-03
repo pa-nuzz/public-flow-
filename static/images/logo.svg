@@ -1,4 +1,64 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 188 44" width="376" height="88">
+  <style>
+    .mark-core {
+      transform-origin: 22px 22px;
+      animation: markFloat 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite -1.2s;
+    }
+
+    .mark-path {
+      stroke-dasharray: 64;
+      stroke-dashoffset: 64;
+      animation: markDraw 2.9s cubic-bezier(0.35, 0, 0.25, 1) infinite -0.25s,
+                 markGlow 3.7s cubic-bezier(0.4, 0, 0.2, 1) infinite -0.9s;
+    }
+
+    @keyframes markFloat {
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-0.35px);
+      }
+    }
+
+    @keyframes markDraw {
+      0% {
+        stroke-dashoffset: 64;
+      }
+      34% {
+        stroke-dashoffset: 0;
+      }
+      72% {
+        stroke-dashoffset: 0;
+      }
+      100% {
+        stroke-dashoffset: 64;
+      }
+    }
+
+    @keyframes markGlow {
+      0%,
+      100% {
+        stroke-opacity: 0.72;
+      }
+      50% {
+        stroke-opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mark-core,
+      .mark-path {
+        animation: none;
+      }
+
+      .mark-path {
+        stroke-dasharray: none;
+        stroke-dashoffset: 0;
+      }
+    }
+  </style>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#6D5FED"/>
@@ -9,9 +69,11 @@
   <!-- Icon -->
   <rect width="44" height="44" rx="11" fill="url(#bg)"/>
   <rect x="0.75" y="0.75" width="42.5" height="42.5" rx="10.4" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="1"/>
-  <path d="M11 32 L11 12 L22 21 L33 12 L33 32"
-        fill="none" stroke="white" stroke-width="3.2"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="mark-core">
+    <path class="mark-path" d="M11 32 L11 12 L22 21 L33 12 L33 32"
+          fill="none" stroke="white" stroke-width="3.2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 
   <!-- Wordmark -->
   <text x="56" y="30"

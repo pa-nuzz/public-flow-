@@ -6,6 +6,29 @@
 
 {% block content %}
 <div class="page-shell max-w-none">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="page-title">{% if read_only %}View Campaign{% elif campaign %}Edit Campaign{% else %}Create Campaign{% endif %}</h2>
+      <p class="page-subtitle">Build and manage campaigns inside your campaign workspace.</p>
+    </div>
+    <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+      <a href="{% url 'campaigns:campaign_list' %}" class="campaign-cta-secondary flex-1 sm:flex-none">
+        Back to Campaigns
+      </a>
+      {% if read_only and campaign %}
+      <a href="{% url 'campaigns:campaign_edit' campaign.id %}" class="campaign-cta-secondary flex-1 sm:flex-none">
+        Edit This Campaign
+      </a>
+      {% endif %}
+      {% if campaign or read_only %}
+      <a href="{% url 'campaigns:campaign_create' %}" class="campaign-cta flex-1 sm:flex-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Campaign
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="premium-surface card-elevate rounded-2xl p-5 mb-6">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="relative text-center">
@@ -124,7 +147,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {% for cl in contact_lists %}
             <label class="contact-list-option relative flex items-start gap-3 p-4 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-primary/50 hover:bg-indigo-50/40 transition-all">
-              <input type="checkbox" name="contact_lists" value="{{ cl.id }}" class="mt-0.5 accent-indigo-600 contact-list-checkbox" />
+              <input type="checkbox" name="contact_lists" value="{{ cl.id }}" data-contact-count="{{ cl.contacts.count }}" class="mt-0.5 accent-indigo-600 contact-list-checkbox" />
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold text-slate-800 leading-snug break-words">{{ cl.name }}</p>
                 <p class="text-xs text-gray-400 mt-0.5">{{ cl.contacts.count }} contact{{ cl.contacts.count|pluralize }}</p>
@@ -226,6 +249,7 @@
             {{ form.recipient_emails|add_class:"auth-input min-h-24"|attr:"placeholder:alice@example.com, bob@example.com" }}
             {% if form.recipient_emails.errors %}<p class="mt-1 text-xs text-red-600">{{ form.recipient_emails.errors.0 }}</p>{% endif %}
             <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Add one or many emails (comma or new line separated).</p>
+            <p id="recipient-live-stats" class="mt-1 text-xs text-slate-500">0 unique recipients · 0 duplicates removed</p>
           </div>
         </div>
       </div>
@@ -312,6 +336,14 @@
 
         <div class="mt-6 flex flex-col gap-3">
           {% if not read_only %}
+          <label for="id_test_email" class="text-xs font-semibold text-slate-600">Test Email</label>
+          <input id="id_test_email" name="test_email" type="email" class="auth-input" placeholder="you@example.com" />
+          <p class="text-[11px] text-slate-500">Sends a single preview email and keeps this campaign in draft/edit mode.</p>
+          <button type="submit" name="action" value="send_test"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold transition-colors border border-indigo-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+            Send Test Email
+          </button>
           <button type="submit" name="action" value="save_draft"
             class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold transition-colors shadow-lg shadow-indigo-500/30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -323,9 +355,9 @@
             Send Campaign Now
           </button>
           {% endif %}
-          <a href="{% url 'dashboard:dashboard' %}"
+          <a href="{% url 'campaigns:campaign_list' %}"
             class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors text-sm font-semibold">
-            {% if read_only %}Back to Dashboard{% else %}Cancel{% endif %}
+            {% if read_only %}Back to Campaigns{% else %}Cancel{% endif %}
           </a>
         </div>
       </div>
@@ -459,6 +491,7 @@ function processCSV(file) {
     document.getElementById('csv-count').textContent = emails.length + ' valid email' + (emails.length !== 1 ? 's' : '') + ' found';
     document.getElementById('csv-email-preview').textContent = emails.slice(0, 10).join('\n') + (emails.length > 10 ? `\n… and ${emails.length - 10} more` : '');
     csvDropZone.classList.add('hidden');
+    updateRecipientStats();
   };
   reader.readAsText(file);
 }
@@ -471,10 +504,50 @@ function clearCSV() {
   document.getElementById('csv-email-preview').textContent = '';
   document.getElementById('csv-drop-zone').classList.remove('hidden');
   document.getElementById('csv-file-input').value = '';
+  updateRecipientStats();
+}
+
+function parseEmailTokens(rawText) {
+  return (rawText || '')
+    .split(/[\n,;]+/)
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function updateRecipientStats() {
+  const statsEl = document.getElementById('recipient-live-stats');
+  if (!statsEl) return;
+
+  const manualField = document.getElementById('id_recipient_emails');
+  const manualEmails = parseEmailTokens(manualField ? manualField.value : '');
+  const csvRaw = document.getElementById('csv_emails_input')?.value || '';
+  const csvEmails = parseEmailTokens(csvRaw);
+
+  const checkedLists = Array.from(document.querySelectorAll('.contact-list-checkbox:checked'));
+  const selectedListRecipients = checkedLists.reduce((sum, el) => {
+    const count = parseInt(el.dataset.contactCount || '0', 10);
+    return sum + (Number.isNaN(count) ? 0 : count);
+  }, 0);
+
+  const merged = [...manualEmails, ...csvEmails];
+  const unique = new Set(merged);
+  const duplicateCount = merged.length - unique.size;
+
+  if (selectedListRecipients > 0) {
+    statsEl.textContent = `${unique.size} unique manual/CSV · ${duplicateCount} duplicates removed · +${selectedListRecipients} from selected lists`;
+  } else {
+    statsEl.textContent = `${unique.size} unique recipients · ${duplicateCount} duplicates removed`;
+  }
 }
 
 // ── Inject CSV emails into recipient_emails on submit ──────────
 document.getElementById('campaign-form').addEventListener('submit', function() {
+  const submitButtons = this.querySelectorAll('button[type="submit"]');
+  submitButtons.forEach((button) => {
+    button.disabled = true;
+    button.classList.add('opacity-70', 'cursor-not-allowed');
+  });
+
   const csvEmails = document.getElementById('csv_emails_input').value;
   if (csvEmails) {
     const recipientField = document.getElementById('id_recipient_emails');
@@ -587,6 +660,17 @@ document.getElementById('analyze-spam-btn').addEventListener('click', async func
     bodyInput.addEventListener('input', updateBodyCounter);
     updateBodyCounter();
   }
+
+  const recipientInput = document.getElementById('id_recipient_emails');
+  if (recipientInput) {
+    recipientInput.addEventListener('input', updateRecipientStats);
+  }
+
+  document.querySelectorAll('.contact-list-checkbox').forEach((box) => {
+    box.addEventListener('change', updateRecipientStats);
+  });
+
+  updateRecipientStats();
 })();
 </script>
 {% endblock %}

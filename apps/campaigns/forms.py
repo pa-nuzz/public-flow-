@@ -1,6 +1,7 @@
 from django import forms
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import Campaign
 from apps.senders.models import Sender
 from apps.contacts.models import ContactList
@@ -58,4 +59,13 @@ class CampaignForm(forms.ModelForm):
         body_text = (cleaned_data.get('body_text') or '').strip()
         if not body_text:
             raise forms.ValidationError('Message content is required.')
+
+        scheduled_at = cleaned_data.get('scheduled_at')
+        if scheduled_at:
+            now = timezone.now()
+            if timezone.is_naive(scheduled_at):
+                scheduled_at = timezone.make_aware(scheduled_at, timezone.get_current_timezone())
+                cleaned_data['scheduled_at'] = scheduled_at
+            if scheduled_at <= now:
+                self.add_error('scheduled_at', 'Schedule time must be in the future.')
         return cleaned_data

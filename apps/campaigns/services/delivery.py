@@ -49,12 +49,13 @@ def update_campaign_unique_open_count(campaign) -> None:
     campaign.save(update_fields=['open_count', 'updated_at'])
 
 
-def send_campaign_with_smtp(campaign, base_url: str):
+def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
     sender = campaign.sender
     if not sender:
         raise ValueError('Select a sender profile before sending.')
 
-    recipients = campaign.get_recipient_list()
+    recipients = recipients_override if recipients_override is not None else campaign.get_recipient_list()
+    recipients = [email.strip().lower() for email in recipients if email and email.strip()]
     if not recipients:
         raise ValueError('Add at least one recipient email before sending.')
 
@@ -135,3 +136,62 @@ def send_campaign_with_smtp(campaign, base_url: str):
     sender.save(update_fields=['emails_sent_today', 'last_reset_date'])
 
     return sent_count, failed_count, last_error
+
+
+def send_test_email_with_smtp(campaign, test_email: str):
+    sender = campaign.sender
+    if not sender:
+        raise ValueError('Select a sender profile before sending a test email.')
+
+    recipient = (test_email or '').strip().lower()
+    if not recipient:
+        raise ValueError('Provide a test email address.')
+
+    smtp_password = sender.get_password()
+    if not smtp_password:
+        raise ValueError('Could not decrypt SMTP password for this sender. Re-save sender credentials.')
+
+    plain_body = campaign.body_text.strip() if campaign.body_text else ''
+    html_body = campaign.body_html.strip() if campaign.body_html else ''
+    if not html_body and plain_body:
+        html_body = text_to_html(plain_body)
+    if not plain_body and html_body:
+        plain_body = 'This email contains HTML content. Please use an HTML-compatible mail client.'
+
+    if not plain_body and not html_body:
+        raise ValueError('Message content is required before sending a test email.')
+
+    from_name = (campaign.from_name or sender.display_name or '').strip()
+    from_header = f'{from_name} <{sender.from_email}>' if from_name else sender.from_email
+    reply_to = campaign.reply_to or sender.from_email
+
+    available_quota = max(sender.daily_limit - sender.emails_sent_today, 0)
+    if available_quota == 0:
+        raise ValueError('Sender daily limit reached. Increase limit or wait until next reset.')
+
+    subject = campaign.subject or 'Test Campaign'
+
+    if sender.smtp_port == 465:
+        smtp_client = smtplib.SMTP_SSL(sender.smtp_host, sender.smtp_port, timeout=20)
+    else:
+        smtp_client = smtplib.SMTP(sender.smtp_host, sender.smtp_port, timeout=20)
+
+    with smtp_client as server:
+        if sender.smtp_port != 465 and sender.use_tls:
+            server.starttls(context=ssl.create_default_context())
+        server.login(sender.username, smtp_password)
+
+        message = EmailMultiAlternatives(
+            subject=f'[TEST] {subject}',
+            body=plain_body,
+            from_email=from_header,
+            to=[recipient],
+            reply_to=[reply_to] if reply_to else None,
+        )
+        if html_body:
+            message.attach_alternative(html_body, 'text/html')
+        server.sendmail(from_header, [recipient], message.message().as_string())
+
+    sender.emails_sent_today += 1
+    sender.last_reset_date = timezone.now().date()
+    sender.save(update_fields=['emails_sent_today', 'last_reset_date'])

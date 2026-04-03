@@ -5,19 +5,23 @@ Includes SMTP sending, tracking pixel handling, and click redirect tracking.
 """
 
 import base64
+import csv
 from datetime import timedelta
 from urllib.parse import unquote_plus, urlparse
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncHour
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from apps.senders.models import Sender
 from .models import Campaign, EmailClickEvent, EmailEngagement
 from .forms import CampaignForm
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.contrib import messages
 from apps.contacts.models import ContactList, Contact, ContactTag
 from .services import (
@@ -25,8 +29,23 @@ from .services import (
     apply_campaign_spam_signals,
     merge_recipient_emails,
     send_campaign_with_smtp,
+    send_test_email_with_smtp,
     update_campaign_unique_open_count,
 )
+
+
+def _validate_campaign_ready_to_send(campaign_obj):
+    errors = []
+    if not campaign_obj.sender_id:
+        errors.append('Select a sender profile before sending.')
+    if not (campaign_obj.subject or '').strip():
+        errors.append('Subject is required before sending.')
+    if not (campaign_obj.body_text or '').strip():
+        errors.append('Message content is required before sending.')
+    recipient_count = len(campaign_obj.get_recipient_list())
+    if recipient_count == 0:
+        errors.append('Add at least one valid recipient email before sending.')
+    return errors, recipient_count
 
 
 def _campaign_form_view(request, campaign=None, read_only=False):
@@ -116,10 +135,53 @@ def _campaign_form_view(request, campaign=None, read_only=False):
             if contact_list:
                 campaign_obj.recipient_emails = merge_recipient_emails(campaign_obj.recipient_emails, contact_list.get_email_list())
 
+            if action == 'send_test':
+                test_email = (request.POST.get('test_email') or '').strip().lower()
+                if not test_email:
+                    messages.error(request, 'Enter a test email address before sending a test.')
+                    return render(request, 'campaigns/create.html', {
+                        'form': form,
+                        'senders': senders,
+                        'campaign': campaign,
+                        'contact_lists': ContactList.objects.filter(user=request.user),
+                        'available_tags': ContactTag.objects.filter(user=request.user),
+                    })
+                try:
+                    validate_email(test_email)
+                except ValidationError:
+                    messages.error(request, 'Enter a valid test email address.')
+                    return render(request, 'campaigns/create.html', {
+                        'form': form,
+                        'senders': senders,
+                        'campaign': campaign,
+                        'contact_lists': ContactList.objects.filter(user=request.user),
+                        'available_tags': ContactTag.objects.filter(user=request.user),
+                    })
+
+                campaign_obj.total_recipients = len(campaign_obj.get_recipient_list())
+                if not campaign_obj.pk:
+                    campaign_obj.status = 'draft'
+                campaign_obj.save()
+                try:
+                    send_test_email_with_smtp(campaign_obj, test_email)
+                    messages.success(request, f'Test email sent to {test_email}.')
+                except Exception as exc:
+                    messages.error(request, f'Test send failed: {exc}')
+                return redirect('campaigns:campaign_edit', campaign_id=campaign_obj.id)
+
             # Handle "Send Now" action: immediately send campaign via SMTP
             if action == 'send_now':
+                pre_send_errors, recipient_count = _validate_campaign_ready_to_send(campaign_obj)
+                if pre_send_errors:
+                    for error in pre_send_errors:
+                        messages.error(request, error)
+                    campaign_obj.status = 'draft'
+                    campaign_obj.total_recipients = recipient_count
+                    campaign_obj.save()
+                    return redirect('campaigns:campaign_edit', campaign_id=campaign_obj.id)
+
                 campaign_obj.status = 'sending'  # Temp status during send
-                campaign_obj.total_recipients = len(campaign_obj.get_recipient_list())
+                campaign_obj.total_recipients = recipient_count
                 campaign_obj.save()  # Save first to get ID for tracking
                 try:
                     # Build tracking base URL for open/click tracking pixel and links
@@ -223,9 +285,15 @@ def campaign_send(request, campaign_id):
     if request.method != 'POST':
         return redirect('campaigns:campaign_list')
 
+    pre_send_errors, recipient_count = _validate_campaign_ready_to_send(campaign)
+    if pre_send_errors:
+        for error in pre_send_errors:
+            messages.error(request, error)
+        return redirect('campaigns:campaign_edit', campaign_id=campaign.id)
+
     # Mark campaign as sending and save
     campaign.status = 'sending'
-    campaign.total_recipients = len(campaign.get_recipient_list())
+    campaign.total_recipients = recipient_count
     campaign.save(update_fields=['status', 'total_recipients', 'updated_at'])
     try:
         # Build tracking base URL for open/click tracking
@@ -249,6 +317,56 @@ def campaign_send(request, campaign_id):
         campaign.status = 'failed'
         campaign.save(update_fields=['status', 'updated_at'])
         messages.error(request, f'Campaign send failed: {exc}')
+
+    return redirect('campaigns:campaign_list')
+
+
+@login_required
+def campaign_retry_failed(request, campaign_id):
+    campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
+    if request.method != 'POST':
+        return redirect('campaigns:campaign_list')
+
+    all_recipients = campaign.get_recipient_list()
+    if not all_recipients:
+        messages.error(request, 'No recipients found for this campaign.')
+        return redirect('campaigns:campaign_edit', campaign_id=campaign.id)
+
+    sent_recipients = set(
+        campaign.engagements.values_list('recipient_email', flat=True)
+    )
+    retry_recipients = [email for email in all_recipients if email not in sent_recipients]
+
+    if not retry_recipients:
+        messages.info(request, 'No failed recipients left to retry.')
+        return redirect('campaigns:campaign_list')
+
+    campaign.status = 'sending'
+    campaign.save(update_fields=['status', 'updated_at'])
+    try:
+        base_url = (settings.TRACKING_BASE_URL or request.build_absolute_uri('/')).rstrip('/')
+        sent_count, failed_count, last_error = send_campaign_with_smtp(
+            campaign,
+            base_url,
+            recipients_override=retry_recipients,
+        )
+        campaign.sent_count = (campaign.sent_count or 0) + sent_count
+        campaign.bounce_count = (campaign.bounce_count or 0) + failed_count
+        campaign.status = 'sent' if campaign.sent_count > 0 else 'failed'
+        campaign.save(update_fields=['sent_count', 'bounce_count', 'status', 'updated_at'])
+
+        if failed_count > 0:
+            messages.warning(
+                request,
+                f'Retry completed with partial failures. Sent: {sent_count}, failed: {failed_count}. '
+                f'{last_error or ""}'.strip(),
+            )
+        else:
+            messages.success(request, f'Retry successful. Sent to {sent_count} previously failed recipients.')
+    except Exception as exc:
+        campaign.status = 'failed'
+        campaign.save(update_fields=['status', 'updated_at'])
+        messages.error(request, f'Retry failed: {exc}')
 
     return redirect('campaigns:campaign_list')
 
@@ -292,15 +410,38 @@ def campaign_list(request):
         HttpResponse: Rendered campaigns list template with campaign and stats data.
     """
     # Fetch campaigns and engagement data for current user only
-    campaigns = Campaign.objects.filter(user=request.user).select_related('sender')
+    campaigns_qs = Campaign.objects.filter(user=request.user).select_related('sender')
     engagements = EmailEngagement.objects.filter(campaign__user=request.user)
+
+    query = (request.GET.get('q') or '').strip()
+    status = (request.GET.get('status') or 'all').strip().lower()
+    start_date = (request.GET.get('start') or '').strip()
+    end_date = (request.GET.get('end') or '').strip()
+
+    if query:
+        campaigns_qs = campaigns_qs.filter(Q(name__icontains=query) | Q(subject__icontains=query))
+
+    valid_statuses = {choice[0] for choice in Campaign.STATUS_CHOICES}
+    if status in valid_statuses:
+        campaigns_qs = campaigns_qs.filter(status=status)
+    else:
+        status = 'all'
+
+    if start_date:
+        campaigns_qs = campaigns_qs.filter(updated_at__date__gte=start_date)
+    if end_date:
+        campaigns_qs = campaigns_qs.filter(updated_at__date__lte=end_date)
+
+    paginator = Paginator(campaigns_qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    campaigns = page_obj.object_list
     # Count campaigns by status for display filters/summary
     status_counts = {
-        'all': campaigns.count(),
-        'draft': campaigns.filter(status='draft').count(),
-        'scheduled': campaigns.filter(status='scheduled').count(),
-        'sent': campaigns.filter(status='sent').count(),
-        'failed': campaigns.filter(status='failed').count(),
+        'all': Campaign.objects.filter(user=request.user).count(),
+        'draft': Campaign.objects.filter(user=request.user, status='draft').count(),
+        'scheduled': Campaign.objects.filter(user=request.user, status='scheduled').count(),
+        'sent': Campaign.objects.filter(user=request.user, status='sent').count(),
+        'failed': Campaign.objects.filter(user=request.user, status='failed').count(),
     }
     # Aggregate email metrics from EmailEngagement (event-driven, not denormalized fields)
     email_totals = {
@@ -311,8 +452,15 @@ def campaign_list(request):
     }
     return render(request, 'campaigns/list.html', {
         'campaigns': campaigns,
+        'page_obj': page_obj,
         'status_counts': status_counts,
         'email_totals': email_totals,
+        'filters': {
+            'q': query,
+            'status': status,
+            'start': start_date,
+            'end': end_date,
+        },
     })
 
 
@@ -388,6 +536,59 @@ def campaign_analytics(request, campaign_id):
         'timeline': timeline,
     }
     return render(request, 'campaigns/analytics.html', context)
+
+
+@login_required
+def campaign_analytics_export_csv(request, campaign_id):
+    campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
+    export_type = (request.GET.get('type') or 'opens').strip().lower()
+
+    if export_type == 'links':
+        rows = (
+            campaign.click_events
+            .values('clicked_url')
+            .annotate(total_clicks=Count('id'))
+            .order_by('-total_clicks', 'clicked_url')
+        )
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="campaign_{campaign.id}_clicked_links.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['campaign_id', 'campaign_name', 'clicked_url', 'total_clicks'])
+        for row in rows:
+            writer.writerow([
+                campaign.id,
+                campaign.name,
+                row['clicked_url'],
+                row['total_clicks'],
+            ])
+        return response
+
+    engagements = campaign.engagements.order_by('-opened_at', 'recipient_email')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="campaign_{campaign.id}_opens.csv"'
+    writer = csv.writer(response)
+    writer.writerow([
+        'campaign_id',
+        'campaign_name',
+        'recipient_email',
+        'sent_at',
+        'opened_at',
+        'clicked_at',
+        'open_count',
+        'click_count',
+    ])
+    for engagement in engagements:
+        writer.writerow([
+            campaign.id,
+            campaign.name,
+            engagement.recipient_email,
+            engagement.sent_at.isoformat() if engagement.sent_at else '',
+            engagement.opened_at.isoformat() if engagement.opened_at else '',
+            engagement.clicked_at.isoformat() if engagement.clicked_at else '',
+            engagement.open_count,
+            engagement.click_count,
+        ])
+    return response
 
 
 def campaign_track_open(request, token):

@@ -1,0 +1,104 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Create List - Mailexa AI{% endblock %}
+{% block page_title %}Create List{% endblock %}
+
+{% block content %}
+<div class="page-shell max-w-2xl mx-auto">
+
+  <!-- Page Header -->
+  <div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'contacts:list' %}" class="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Create New List</h1>
+      <p class="text-sm text-slate-500">Create a contact list to organize your subscribers</p>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="premium-surface card-elevate rounded-2xl overflow-hidden">
+    <div class="p-6 sm:p-8">
+      <form method="post" action="{% url 'contacts:create_list' %}" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- List Name -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">
+            List Name <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            </div>
+            <input type="text" name="name" required
+              class="auth-input pl-16 py-4 text-base w-full rounded-xl"
+              placeholder="e.g., Newsletter Subscribers, VIP Customers..."
+              autofocus />
+          </div>
+          <p class="mt-2 text-xs text-slate-400">Give your list a clear, descriptive name</p>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">
+            Description <span class="text-slate-400 font-normal">(optional)</span>
+          </label>
+          <div class="relative">
+            <svg class="absolute left-4 top-4 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <textarea name="description" rows="4"
+              class="auth-input pl-12 py-3 text-sm w-full rounded-xl resize-none"
+              placeholder="Briefly describe the purpose of this list... (e.g., 'Customers who signed up via the homepage popup')"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-indigo-900">Add Contacts</p>
+                <p class="text-xs text-indigo-700 mt-1">Add contacts manually one by one</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-emerald-900">Import CSV</p>
+                <p class="text-xs text-emerald-700 mt-1">Bulk import from a CSV file</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-slate-200 pt-6">
+          <p class="text-sm text-slate-500 mb-4">After creating the list, you'll be redirected to add contacts.</p>
+
+          <!-- Actions -->
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="{% url 'contacts:list' %}"
+              class="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors text-center">
+              Cancel
+            </a>
+            <button type="submit"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-lg shadow-emerald-500/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Create List
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count
+from django.core.paginator import Paginator
 from .models import Contact, ContactList, ContactTag
 import csv
 import io
@@ -11,23 +12,47 @@ import io
 def contacts_home(request):
     contact_lists = ContactList.objects.filter(user=request.user).annotate(contact_count=Count('contacts'))
     available_tags = ContactTag.objects.filter(user=request.user)
-    all_contacts = Contact.objects.filter(
+
+    # Base queryset with optimized queries
+    contacts_qs = Contact.objects.filter(
         contact_list__user=request.user
     ).select_related('contact_list').prefetch_related('tags').order_by('-created_at')
 
-    # Search
+    # List filter (from clicking on a list card)
+    selected_list_id = request.GET.get('list_id', '').strip()
+    selected_list = None
+    if selected_list_id and selected_list_id.isdigit():
+        selected_list = get_object_or_404(ContactList, id=selected_list_id, user=request.user)
+        contacts_qs = contacts_qs.filter(contact_list=selected_list)
+
+    # Tag filter
+    selected_tag_id = request.GET.get('tag_id', '').strip()
+    selected_tag = None
+    if selected_tag_id and selected_tag_id.isdigit():
+        selected_tag = get_object_or_404(ContactTag, id=selected_tag_id, user=request.user)
+        contacts_qs = contacts_qs.filter(tags=selected_tag)
+
+    # Search filter
     search = request.GET.get('q', '').strip()
     if search:
-        all_contacts = all_contacts.filter(email__icontains=search)
+        contacts_qs = contacts_qs.filter(email__icontains=search)
 
-    total = Contact.objects.filter(contact_list__user=request.user).count()
+    total = contacts_qs.count()
+
+    # Pagination
+    paginator = Paginator(contacts_qs, 25)  # 25 contacts per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'contacts/contacts_home.html', {
         'contact_lists': contact_lists,
         'available_tags': available_tags,
-        'all_contacts': all_contacts,
+        'all_contacts': page_obj.object_list,
+        'page_obj': page_obj,
         'total': total,
         'search': search,
+        'selected_list': selected_list,
+        'selected_tag': selected_tag,
     })
 
 
@@ -283,3 +308,28 @@ def delete_list(request, list_id):
         messages.success(request, f'List "{name}" and all its contacts deleted.')
     return redirect('contacts:list')
 
+
+@login_required
+def create_list(request):
+    """Create a new contact list - renders form for GET, handles creation for POST."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not name:
+            messages.error(request, 'List name is required.')
+            return render(request, 'contacts/create_list.html')
+
+        if ContactList.objects.filter(user=request.user, name=name).exists():
+            messages.error(request, f'A list named "{name}" already exists.')
+            return render(request, 'contacts/create_list.html')
+
+        contact_list = ContactList.objects.create(
+            user=request.user,
+            name=name,
+            description=description or None
+        )
+        messages.success(request, f'List "{name}" created successfully. Add contacts now!')
+        return redirect('contacts:list')
+
+    return render(request, 'contacts/create_list.html')

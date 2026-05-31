@@ -42,3 +42,46 @@ def analyze_spam(request):
     except Exception as e:
         logger.error(f"Spam analysis error: {str(e)}")
         return JsonResponse({'success': False, 'error': 'An error occurred during analysis.'}, status=400)
+
+
+@login_required
+@csrf_protect
+@require_POST
+def generate_copilot_content(request):
+    """Generate email copy using Gemini AI Co-Pilot and analyze for spam triggers via AJAX.
+    
+    Accepts POST request with a prompt and desired tone, calls the copilot service,
+    and analyzes the result.
+    
+    Args:
+        request: HTTP request with JSON body containing 'prompt' and 'tone'.
+    
+    Returns:
+        JsonResponse: JSON containing generated subject, body, spam_score, and risk_level.
+    """
+    try:
+        data = json.loads(request.body)
+        prompt = (data.get('prompt') or '').strip()
+        tone = (data.get('tone') or 'professional').strip()
+        
+        if not prompt:
+            return JsonResponse({'success': False, 'error': 'Prompt is required.'}, status=400)
+            
+        from .services.copilot import generate_ai_copy
+        content = generate_ai_copy(prompt, tone)
+        
+        # Analyze generated copy to give user instantaneous deliverability feedback
+        combined_text = f"{content.get('subject', '')} {content.get('body', '')}"
+        spam_result = analyze_spam_text(combined_text)
+        
+        return JsonResponse({
+            'success': True,
+            'subject': content.get('subject', ''),
+            'body': content.get('body', ''),
+            'spam_score': spam_result.get('spam_score', 0.0),
+            'risk_level': spam_result.get('risk_level', 'Very Low')
+        })
+    except Exception as e:
+        logger.error(f"Content generation error: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'An error occurred during content generation.'}, status=500)
+

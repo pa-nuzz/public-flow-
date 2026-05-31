@@ -5,15 +5,16 @@
 {% block page_title %}{% if read_only %}View Campaign{% elif campaign %}Edit Campaign{% else %}Create Campaign{% endif %}{% endblock %}
 
 {% block content %}
-<div class="page-shell max-w-none">
+<div class="page-shell max-w-none space-y-6">
+
   <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div>
-      <h2 class="page-title">{% if read_only %}View Campaign{% elif campaign %}Edit Campaign{% else %}Create Campaign{% endif %}</h2>
-      <p class="page-subtitle">Build and manage campaigns inside your campaign workspace.</p>
+      <h1 class="text-2xl font-bold text-slate-900">{% if read_only %}View Campaign{% elif campaign %}Edit Campaign{% else %}Create Campaign{% endif %}</h1>
+      <p class="text-sm text-slate-500 mt-1">Build and manage campaigns inside your workspace</p>
     </div>
     <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
       <a href="{% url 'campaigns:campaign_list' %}" class="campaign-cta-secondary flex-1 sm:flex-none">
-        Back to Campaigns
+        ← Back to Campaigns
       </a>
       {% if read_only and campaign %}
       <a href="{% url 'campaigns:campaign_edit' campaign.id %}" class="campaign-cta-secondary flex-1 sm:flex-none">
@@ -222,11 +223,36 @@
           </div>
 
           <div class="md:col-span-2">
-            <label for="id_subject" class="block text-sm font-semibold text-slate-700 mb-2">Subject Line</label>
-            {{ form.subject|add_class:"auth-input"|attr:"placeholder:Your April update is ready" }}
-            {% if form.subject.errors %}<p class="mt-1 text-xs text-red-600">{{ form.subject.errors.0 }}</p>{% endif %}
-            <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Keep it under 60 characters for best open rates.</p>
-            <p id="subject-char-counter" class="mt-1 text-xs text-slate-400">0/60 characters</p>
+            <!-- Standard subject (hidden when A/B is active) -->
+            <div id="standard-subject-block">
+              <label for="id_subject" class="block text-sm font-semibold text-slate-700 mb-2">Subject Line</label>
+              {{ form.subject|add_class:"auth-input"|attr:"placeholder:Your April update is ready" }}
+              {% if form.subject.errors %}<p class="mt-1 text-xs text-red-600">{{ form.subject.errors.0 }}</p>{% endif %}
+              <p class="mt-1.5 text-[10px] text-gray-400 font-medium">Keep it under 60 characters for best open rates.</p>
+              <p id="subject-char-counter" class="mt-1 text-xs text-slate-400">0/60 characters</p>
+            </div>
+
+            <!-- A/B variant subjects (visible when A/B is active) -->
+            <div id="ab-subject-block" class="hidden">
+              <div class="ab-tabs-container flex border-b border-slate-200 mb-4">
+                <button type="button" class="ab-tab-btn active px-4 py-2 text-sm font-bold text-violet-700 border-b-2 border-violet-600" data-ab-tab="a-subject">
+                  <span class="variant-indicator variant-a mr-1.5">A</span> Variant A Subject
+                </button>
+                <button type="button" class="ab-tab-btn px-4 py-2 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-violet-700" data-ab-tab="b-subject">
+                  <span class="variant-indicator variant-b mr-1.5">B</span> Variant B Subject
+                </button>
+              </div>
+              <div class="ab-panel" id="ab-panel-a-subject">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Variant A Subject</label>
+                {{ form.variant_a_subject|add_class:"auth-input"|attr:"placeholder:Variant A - your compelling subject line" }}
+                {% if form.variant_a_subject.errors %}<p class="mt-1 text-xs text-red-600">{{ form.variant_a_subject.errors.0 }}</p>{% endif %}
+              </div>
+              <div class="ab-panel hidden" id="ab-panel-b-subject">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Variant B Subject</label>
+                {{ form.variant_b_subject|add_class:"auth-input"|attr:"placeholder:Variant B - your alternative subject line" }}
+                {% if form.variant_b_subject.errors %}<p class="mt-1 text-xs text-red-600">{{ form.variant_b_subject.errors.0 }}</p>{% endif %}
+              </div>
+            </div>
           </div>
 
           <div>
@@ -265,12 +291,35 @@
         </div>
 
         <div class="space-y-5">
-          <div>
+          <!-- Standard body (hidden when A/B is active) -->
+          <div id="standard-body-block">
             <label for="id_body_text" class="block text-sm font-semibold text-slate-700 mb-2">Message Body</label>
             {{ form.body_text|add_class:"auth-input min-h-40"|attr:"placeholder:Hello [first_name], thanks for joining us." }}
             {% if form.body_text.errors %}<p class="mt-1 text-xs text-red-600">{{ form.body_text.errors.0 }}</p>{% endif %}
             <p class="mt-1.5 text-[10px] text-gray-400 font-medium">This text is converted to HTML automatically during send.</p>
             <p id="body-text-counter" class="mt-1 text-xs text-slate-400">0 words · 0 chars</p>
+          </div>
+
+          <!-- A/B variant bodies (visible when A/B is active) -->
+          <div id="ab-body-block" class="hidden">
+            <div class="ab-tabs-container flex border-b border-slate-200 mb-4">
+              <button type="button" class="ab-tab-btn active px-4 py-2 text-sm font-bold text-violet-700 border-b-2 border-violet-600" data-ab-tab="a-body">
+                <span class="variant-indicator variant-a mr-1.5">A</span> Variant A Body
+              </button>
+              <button type="button" class="ab-tab-btn px-4 py-2 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-violet-700" data-ab-tab="b-body">
+                <span class="variant-indicator variant-b mr-1.5">B</span> Variant B Body
+              </button>
+            </div>
+            <div class="ab-panel" id="ab-panel-a-body">
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Variant A Body</label>
+              {{ form.variant_a_body|add_class:"auth-input min-h-40"|attr:"rows:5"|attr:"placeholder:Variant A email body copy..." }}
+              {% if form.variant_a_body.errors %}<p class="mt-1 text-xs text-red-600">{{ form.variant_a_body.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="ab-panel hidden" id="ab-panel-b-body">
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Variant B Body</label>
+              {{ form.variant_b_body|add_class:"auth-input min-h-40"|attr:"rows:5"|attr:"placeholder:Variant B email body copy..." }}
+              {% if form.variant_b_body.errors %}<p class="mt-1 text-xs text-red-600">{{ form.variant_b_body.errors.0 }}</p>{% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -297,6 +346,43 @@
             {{ form.scheduled_at|add_class:"auth-input"|attr:"type:datetime-local" }}
             {% if form.scheduled_at.errors %}<p class="mt-1 text-xs text-red-600">{{ form.scheduled_at.errors.0 }}</p>{% endif %}
             <p class="mt-2 text-xs text-gray-500">Leave empty to keep campaign as draft.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- A/B Testing Toggle -->
+      <div class="premium-surface card-elevate section-card font-sans" id="ab-testing-section">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-7 h-7 bg-violet-600 text-white rounded-lg flex items-center justify-center text-xs font-bold font-sans">A/B</div>
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">A/B Testing</h3>
+        </div>
+
+        <label class="flex items-center gap-3 p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-violet-300 transition-all {% if campaign and campaign.is_ab_test %}border-violet-300 bg-violet-50/50{% endif %}">
+          {{ form.is_ab_test|add_class:"w-5 h-5 text-violet-600 rounded border-gray-300 focus:ring-violet-500 cursor-pointer" }}
+          <div>
+            <p class="text-sm font-bold text-slate-800">Test subject lines & content</p>
+            <p class="text-xs text-slate-500">Send variants A and B to a test segment, then deliver the winner.</p>
+          </div>
+        </label>
+
+        <div id="ab-options" class="mt-4 space-y-4 {% if campaign and campaign.is_ab_test %}{% else %}hidden{% endif %}">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="id_ab_test_duration_hours" class="block text-xs font-semibold text-slate-700 mb-1.5">Test Duration (hours)</label>
+              {{ form.ab_test_duration_hours|add_class:"auth-input" }}
+            </div>
+            <div>
+              <label for="id_ab_percentage" class="block text-xs font-semibold text-slate-700 mb-1.5">Test Size (%)</label>
+              {{ form.ab_percentage|add_class:"auth-input" }}
+              <p class="mt-1 text-[10px] text-slate-400">Each variant gets this %; remaining goes to winner.</p>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-amber-50 border border-amber-200 p-3">
+            <p class="text-[11px] font-semibold text-amber-800">
+              <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              After the test window expires, the winning variant (by open rate) is sent to the remaining recipients automatically.
+            </p>
           </div>
         </div>
       </div>
@@ -363,6 +449,89 @@
       </div>
     </aside>
   </form>
+</div>
+
+<!-- AI Content Co-Pilot Slide-Over Panel -->
+<button type="button" id="copilot-trigger"
+  class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-2xl shadow-indigo-500/40 hover:shadow-indigo-500/60 hover:scale-105 transition-all flex items-center justify-center copilot-btn-glow"
+  title="Open AI Content Co-Pilot">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
+</button>
+
+<div id="copilot-drawer" class="copilot-drawer hidden">
+  <div class="copilot-header">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 text-white flex items-center justify-center text-xs font-black italic">AI</div>
+      <div>
+        <h3 class="text-sm font-bold text-slate-900">Content Co-Pilot</h3>
+        <p class="text-[11px] text-slate-500">Powered by Gemini AI</p>
+      </div>
+    </div>
+    <button type="button" onclick="closeCopilot()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="copilot-body">
+    <div class="space-y-5">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">What do you want to write about?</label>
+        <textarea id="copilot-prompt" rows="4" class="auth-input min-h-24" placeholder="e.g., A welcome email for new SaaS users highlighting our key features and offering a 14-day free trial..."></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Tone</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="tone-option flex items-center gap-2 p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:border-violet-300 transition-all" data-tone="professional">
+            <input type="radio" name="copilot-tone" value="professional" class="hidden" checked>
+            <div class="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center flex-shrink-0"><div class="w-2 h-2 rounded-full bg-violet-600 hidden"></div></div>
+            <span class="text-sm font-semibold text-slate-700">Professional</span>
+          </label>
+          <label class="tone-option flex items-center gap-2 p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:border-violet-300 transition-all" data-tone="urgent">
+            <input type="radio" name="copilot-tone" value="urgent" class="hidden">
+            <div class="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center flex-shrink-0"><div class="w-2 h-2 rounded-full bg-violet-600 hidden"></div></div>
+            <span class="text-sm font-semibold text-slate-700">Urgent</span>
+          </label>
+          <label class="tone-option flex items-center gap-2 p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:border-violet-300 transition-all" data-tone="casual">
+            <input type="radio" name="copilot-tone" value="casual" class="hidden">
+            <div class="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center flex-shrink-0"><div class="w-2 h-2 rounded-full bg-violet-600 hidden"></div></div>
+            <span class="text-sm font-semibold text-slate-700">Casual</span>
+          </label>
+          <label class="tone-option flex items-center gap-2 p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:border-violet-300 transition-all" data-tone="creative">
+            <input type="radio" name="copilot-tone" value="creative" class="hidden">
+            <div class="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center flex-shrink-0"><div class="w-2 h-2 rounded-full bg-violet-600 hidden"></div></div>
+            <span class="text-sm font-semibold text-slate-700">Creative</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="copilot-footer">
+    <div id="copilot-result" class="hidden mb-4 max-h-48 overflow-y-auto space-y-3">
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</p>
+        <p id="copilot-subject-result" class="text-sm font-semibold text-slate-800"></p>
+      </div>
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Body</p>
+        <p id="copilot-body-result" class="text-sm text-slate-700 whitespace-pre-wrap max-h-32 overflow-y-auto"></p>
+      </div>
+      <div class="flex items-center justify-between p-2 rounded-lg border" id="copilot-spam-box">
+        <span class="text-xs font-semibold text-slate-600">Spam Score</span>
+        <span class="text-sm font-black" id="copilot-spam-val">--</span>
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <button type="button" id="copilot-generate-btn"
+        class="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-700 text-white font-bold text-sm hover:from-violet-700 hover:to-indigo-800 transition-all shadow-lg shadow-indigo-500/30">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
+        Generate with AI
+      </button>
+      <button type="button" id="copilot-apply-btn"
+        class="w-full hidden inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/30">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        Apply Content to Campaign
+      </button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -672,5 +841,215 @@ document.getElementById('analyze-spam-btn').addEventListener('click', async func
 
   updateRecipientStats();
 })();
+
+// ── A/B Testing Toggle ────────────────────────────────────────
+(function () {
+  const abCheckbox = document.getElementById('id_is_ab_test');
+  const abOptions = document.getElementById('ab-options');
+  const standardSubject = document.getElementById('standard-subject-block');
+  const standardBody = document.getElementById('standard-body-block');
+  const abSubjectBlock = document.getElementById('ab-subject-block');
+  const abBodyBlock = document.getElementById('ab-body-block');
+
+  function toggleAB(show) {
+    if (!abOptions) return;
+    abOptions.classList.toggle('hidden', !show);
+    if (standardSubject) standardSubject.classList.toggle('hidden', show);
+    if (standardBody) standardBody.classList.toggle('hidden', show);
+    if (abSubjectBlock) abSubjectBlock.classList.toggle('hidden', !show);
+    if (abBodyBlock) abBodyBlock.classList.toggle('hidden', !show);
+  }
+
+  if (abCheckbox) {
+    abCheckbox.addEventListener('change', function () {
+      toggleAB(this.checked);
+    });
+    // Initialize on page load based on initial state
+    toggleAB(abCheckbox.checked);
+  }
+})();
+
+// ── A/B Variant Tab Switching (Subject & Body) ────────────────
+document.querySelectorAll('.ab-tab-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    const tabGroup = this.closest('.ab-tabs-container');
+    const target = this.dataset.abTab;
+
+    // Deactivate all tabs in this group
+    tabGroup.querySelectorAll('.ab-tab-btn').forEach(function (b) {
+      b.classList.remove('active', 'text-violet-700', 'border-violet-600');
+      b.classList.add('text-slate-500', 'border-transparent');
+      b.classList.remove('font-bold');
+      b.classList.add('font-semibold');
+    });
+
+    // Activate clicked tab
+    this.classList.add('active', 'text-violet-700', 'border-violet-600');
+    this.classList.remove('text-slate-500', 'border-transparent');
+    this.classList.add('font-bold');
+    this.classList.remove('font-semibold');
+
+    // Show corresponding panel
+    const panelPrefix = target === 'a-subject' || target === 'b-subject' ? 'ab-panel-' + target : 'ab-panel-' + target;
+    const container = this.closest('.space-y-5') || this.closest('#ab-subject-block') || this.closest('#ab-body-block');
+    if (!container) return;
+
+    const targetPanel = target.startsWith('a-') || target.startsWith('b-')
+      ? document.getElementById('ab-panel-' + target)
+      : null;
+
+    if (targetPanel) {
+      const parent = targetPanel.parentElement;
+      parent.querySelectorAll('.ab-panel').forEach(function (p) {
+        p.classList.add('hidden');
+      });
+      targetPanel.classList.remove('hidden');
+    }
+  });
+});
+
+// ── AI Content Co-Pilot ───────────────────────────────────────
+function closeCopilot() {
+  const drawer = document.getElementById('copilot-drawer');
+  if (drawer) drawer.classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const trigger = document.getElementById('copilot-trigger');
+  const drawer = document.getElementById('copilot-drawer');
+  const generateBtn = document.getElementById('copilot-generate-btn');
+  const applyBtn = document.getElementById('copilot-apply-btn');
+  const promptInput = document.getElementById('copilot-prompt');
+  const resultDiv = document.getElementById('copilot-result');
+  const subjectResult = document.getElementById('copilot-subject-result');
+  const bodyResult = document.getElementById('copilot-body-result');
+  const spamVal = document.getElementById('copilot-spam-val');
+  const spamBox = document.getElementById('copilot-spam-box');
+
+  // Tone selection UI
+  document.querySelectorAll('.tone-option').forEach(function (opt) {
+    opt.addEventListener('click', function () {
+      this.querySelectorAll('.tone-option').forEach(function (o) {
+        o.classList.remove('border-violet-500', 'bg-violet-50');
+        o.classList.add('border-slate-200');
+        o.querySelector('.w-2.h-2').classList.add('hidden');
+      });
+      this.classList.remove('border-slate-200');
+      this.classList.add('border-violet-500', 'bg-violet-50');
+      this.querySelector('input[type="radio"]').checked = true;
+      this.querySelector('.w-2.h-2').classList.remove('hidden');
+    });
+  });
+
+  // Open drawer
+  if (trigger && drawer) {
+    trigger.addEventListener('click', function () {
+      drawer.classList.remove('hidden');
+    });
+  }
+
+  // Close on Escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && drawer && !drawer.classList.contains('hidden')) {
+      drawer.classList.add('hidden');
+    }
+  });
+
+  // Generate content
+  if (generateBtn && promptInput) {
+    generateBtn.addEventListener('click', async function () {
+      const prompt = promptInput.value.trim();
+      if (!prompt) {
+        promptInput.focus();
+        promptInput.style.borderColor = '#EF4444';
+        setTimeout(function () { promptInput.style.borderColor = ''; }, 2000);
+        return;
+      }
+
+      const tone = document.querySelector('input[name="copilot-tone"]:checked');
+      const toneVal = tone ? tone.value : 'professional';
+
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 00-9-9"/></svg> Generating...';
+
+      try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const resp = await fetch('{% url "intelligence:copilot" %}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+          body: JSON.stringify({prompt: prompt, tone: toneVal})
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+          resultDiv.classList.remove('hidden');
+          subjectResult.textContent = data.subject || '—';
+          bodyResult.textContent = data.body || '—';
+          spamVal.textContent = (data.spam_score || 0) + '%';
+          spamVal.className = 'text-sm font-black ' + (
+            data.spam_score < 55 ? 'text-emerald-600' :
+            data.spam_score < 80 ? 'text-amber-600' : 'text-red-600'
+          );
+          spamBox.className = 'flex items-center justify-between p-2 rounded-lg border ' + (
+            data.spam_score < 55 ? 'border-emerald-100 bg-emerald-50' :
+            data.spam_score < 80 ? 'border-amber-100 bg-amber-50' : 'border-red-100 bg-red-50'
+          );
+          applyBtn.classList.remove('hidden');
+        } else {
+          resultDiv.classList.remove('hidden');
+          subjectResult.textContent = 'Error generating content';
+          bodyResult.textContent = data.error || 'Unknown error occurred.';
+          applyBtn.classList.add('hidden');
+        }
+      } catch (e) {
+        resultDiv.classList.remove('hidden');
+        subjectResult.textContent = 'Connection error';
+        bodyResult.textContent = 'Could not reach the AI service. Check your network and try again.';
+        applyBtn.classList.add('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg> Generate with AI';
+      }
+    });
+  }
+
+  // Apply content to campaign form
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function () {
+      const isAB = document.getElementById('id_is_ab_test');
+      const isABChecked = isAB ? isAB.checked : false;
+
+      if (isABChecked) {
+        // Apply to visible variant tabs
+        const activeSubjectTab = document.querySelector('#ab-subject-block .ab-tab-btn.active');
+        const activeBodyTab = document.querySelector('#ab-body-block .ab-tab-btn.active');
+
+        const subjectTarget = activeSubjectTab ? activeSubjectTab.dataset.abTab : 'a-subject';
+        const bodyTarget = activeBodyTab ? activeBodyTab.dataset.abTab : 'a-body';
+
+        const subjectFieldId = subjectTarget === 'a-subject' ? 'id_variant_a_subject' : 'id_variant_b_subject';
+        const bodyFieldId = bodyTarget === 'a-body' ? 'id_variant_a_body' : 'id_variant_b_body';
+
+        document.getElementById(subjectFieldId).value = subjectResult.textContent;
+        document.getElementById(bodyFieldId).value = bodyResult.textContent;
+      } else {
+        document.getElementById('id_subject').value = subjectResult.textContent;
+        document.getElementById('id_body_text').value = bodyResult.textContent;
+      }
+      closeCopilot();
+
+      // Show success toast
+      var toast = document.createElement('div');
+      toast.className = 'fixed top-24 right-10 z-[60] toast-msg animate-toast-in px-5 py-4 rounded-2xl shadow-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-3';
+      toast.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span class="font-semibold">AI content applied!</span>';
+      document.body.appendChild(toast);
+      setTimeout(function () {
+        toast.classList.add('animate-toast-out');
+        setTimeout(function () { toast.remove(); }, 400);
+      }, 2500);
+    });
+  }
+});
 </script>
 {% endblock %}

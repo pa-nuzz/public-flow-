@@ -38,6 +38,55 @@
     </div>
   </div>
 
+  {% if ab_variants %}
+  <div class="premium-surface card-elevate rounded-2xl p-5">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-7 h-7 bg-violet-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">A/B</div>
+      <div>
+        <h3 class="text-base font-semibold text-slate-900">A/B Variant Comparison</h3>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Test {% if campaign.ab_test_status == 'completed' %}completed{% elif campaign.ab_test_status == 'running' %}in progress{% else %}pending{% endif %}
+          {% if campaign.winner_variant %} · Winner: Variant {{ campaign.winner_variant.label }}{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {% for v in ab_variants %}
+      <div class="rounded-2xl border-2 p-5 {% if campaign.winner_variant and campaign.winner_variant.label == v.label %}border-emerald-300 bg-emerald-50/50{% else %}border-slate-200{% endif %}">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="variant-indicator {% if v.label == 'A' %}variant-a{% else %}variant-b{% endif %} w-8 h-8 text-sm">{{ v.label }}</span>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-slate-900 truncate">{{ v.subject }}</p>
+            <p class="text-[11px] text-slate-500">{{ v.sent }} sent</p>
+          </div>
+          {% if campaign.winner_variant and campaign.winner_variant.label == v.label %}
+          <span class="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Winner
+          </span>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="p-3 rounded-xl bg-white border border-slate-100">
+            <p class="text-xs text-slate-500">Opens</p>
+            <p class="text-lg font-bold text-slate-900">{{ v.opens }}</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white border border-slate-100">
+            <p class="text-xs text-slate-500">Open Rate</p>
+            <p class="text-lg font-bold text-slate-900">{{ v.open_rate }}%</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white border border-slate-100">
+            <p class="text-xs text-slate-500">Clicks</p>
+            <p class="text-lg font-bold text-slate-900">{{ v.clicks }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="premium-surface card-elevate rounded-2xl p-5">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-base font-semibold text-slate-900">Opens Timeline (Last 24 Hours)</h3>

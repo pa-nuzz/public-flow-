@@ -16,4 +16,10 @@ urlpatterns = [
     path("<int:campaign_id>/delete/", views.campaign_delete, name="campaign_delete"),
     path("track/open/<str:token>/", views.campaign_track_open, name="track_open"),
     path("track/click/<str:token>/", views.campaign_track_click, name="track_click"),
+    # Email Templates
+    path("templates/", views.template_list, name="template_list"),
+    path("templates/create/", views.template_create, name="template_create"),
+    path("templates/<int:template_id>/edit/", views.template_edit, name="template_edit"),
+    path("templates/<int:template_id>/delete/", views.template_delete, name="template_delete"),
+    path("templates/<int:template_id>/use/", views.template_use, name="template_use"),
 ]

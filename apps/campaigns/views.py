@@ -18,11 +18,12 @@ from django.db.models.functions import TruncHour
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from apps.senders.models import Sender
-from .models import Campaign, EmailClickEvent, EmailEngagement
+from .models import Campaign, EmailClickEvent, EmailEngagement, EmailTemplate
 from .forms import CampaignForm
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
 from apps.contacts.models import ContactList, Contact, ContactTag
 from .services import (
     text_to_html,
@@ -266,6 +267,7 @@ def campaign_view(request, campaign_id):
     return _campaign_form_view(request, campaign=campaign, read_only=True)
 
 
+@ratelimit(key='user', rate='10/m', method='POST', block=True)
 @login_required
 def campaign_send(request, campaign_id):
     """Send a draft campaign or resend an existing campaign.
@@ -321,6 +323,7 @@ def campaign_send(request, campaign_id):
     return redirect('campaigns:campaign_list')
 
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 @login_required
 def campaign_retry_failed(request, campaign_id):
     campaign = get_object_or_404(Campaign, id=campaign_id, user=request.user)
@@ -529,11 +532,28 @@ def campaign_analytics(request, campaign_id):
     for point in timeline:
         point['height_pct'] = round((point['opens'] / max_opens) * 100) if max_opens else 0
 
+    # A/B variant comparison data
+    ab_variants = []
+    if campaign.is_ab_test:
+        for v in campaign.variants.all().order_by('label'):
+            v_opens = v.engagements.filter(opened_at__isnull=False).count()
+            v_clicks = campaign.click_events.filter(engagement__campaign_variant=v).count()
+            ab_variants.append({
+                'label': v.label,
+                'subject': v.subject,
+                'sent': v.sent_count,
+                'opens': v_opens,
+                'open_rate': v.open_rate,
+                'clicks': v_clicks,
+                'bounce_rate': v.bounce_rate,
+            })
+
     context = {
         'campaign': campaign,
         'opened_engagements': opened_engagements,
         'top_clicked_links': top_clicked_links,
         'timeline': timeline,
+        'ab_variants': ab_variants,
     }
     return render(request, 'campaigns/analytics.html', context)
 
@@ -684,5 +704,108 @@ def campaign_track_click(request, token):
         return HttpResponseRedirect(next_url)
     # Invalid URL: redirect to home page
     return redirect('home')
+
+
+# Email Template Views (like Gmail templates)
+@login_required
+def template_list(request):
+    """List all email templates for the user."""
+    templates = request.user.email_templates.filter(is_active=True)
+    return render(request, 'campaigns/templates_list.html', {
+        'templates': templates,
+    })
+
+
+@login_required
+def template_create(request):
+    """Create a new email template."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        body_html = request.POST.get('body_html', '').strip()
+        body_text = request.POST.get('body_text', '').strip()
+
+        if not name:
+            messages.error(request, 'Template name is required.')
+            return render(request, 'campaigns/template_form.html')
+
+        # Check for duplicate name
+        if request.user.email_templates.filter(name=name).exists():
+            messages.error(request, f'A template named "{name}" already exists.')
+            return render(request, 'campaigns/template_form.html', {
+                'name': name,
+                'subject': subject,
+                'body_html': body_html,
+                'body_text': body_text,
+            })
+
+        template = request.user.email_templates.create(
+            name=name,
+            subject=subject,
+            body_html=body_html,
+            body_text=body_text or '',
+        )
+        messages.success(request, f'Template "{name}" created successfully.')
+        return redirect('campaigns:template_list')
+
+    return render(request, 'campaigns/template_form.html')
+
+
+@login_required
+def template_edit(request, template_id):
+    """Edit an existing email template."""
+    template = get_object_or_404(EmailTemplate, id=template_id, user=request.user)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        body_html = request.POST.get('body_html', '').strip()
+        body_text = request.POST.get('body_text', '').strip()
+
+        if not name:
+            messages.error(request, 'Template name is required.')
+            return render(request, 'campaigns/template_form.html', {'template': template})
+
+        # Check for duplicate name (excluding current template)
+        if request.user.email_templates.filter(name=name).exclude(id=template.id).exists():
+            messages.error(request, f'A template named "{name}" already exists.')
+            return render(request, 'campaigns/template_form.html', {
+                'template': template,
+                'name': name,
+                'subject': subject,
+                'body_html': body_html,
+                'body_text': body_text,
+            })
+
+        template.name = name
+        template.subject = subject
+        template.body_html = body_html
+        template.body_text = body_text
+        template.save()
+        messages.success(request, f'Template "{name}" updated successfully.')
+        return redirect('campaigns:template_list')
+
+    return render(request, 'campaigns/template_form.html', {'template': template})
+
+
+@login_required
+def template_delete(request, template_id):
+    """Delete (soft-delete) an email template."""
+    template = get_object_or_404(EmailTemplate, id=template_id, user=request.user)
+    if request.method == 'POST':
+        name = template.name
+        template.is_active = False
+        template.save()
+        messages.success(request, f'Template "{name}" deleted.')
+    return redirect('campaigns:template_list')
+
+
+@login_required
+def template_use(request, template_id):
+    """Use a template to start a new campaign."""
+    template = get_object_or_404(EmailTemplate, id=template_id, user=request.user)
+    template.increment_use()
+    # Redirect to campaign create with template pre-filled
+    return redirect(f"/campaign/create/?template={template.id}")
 
 

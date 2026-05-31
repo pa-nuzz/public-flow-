@@ -12,11 +12,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-shell max-w-none reveal-on-scroll">
+<div class="page-shell max-w-none reveal-on-scroll space-y-6">
+
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h2 class="page-title">Campaign</h2>
-      <p class="page-subtitle">Track drafts, scheduled sends, and delivery results.</p>
+      <h1 class="text-2xl font-bold text-slate-900">Campaigns</h1>
+      <p class="text-sm text-slate-500 mt-1">Track drafts, scheduled sends, and delivery results</p>
     </div>
     <a href="{% url 'campaigns:campaign_create' %}" class="btn-action btn-action-primary inline-flex whitespace-nowrap">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>

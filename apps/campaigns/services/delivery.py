@@ -1,6 +1,7 @@
 import smtplib
 import ssl
 import re
+import random
 from urllib.parse import quote_plus
 from uuid import uuid4
 
@@ -11,7 +12,7 @@ from django.utils import timezone
 
 from apps.campaigns.models import EmailEngagement
 
-from .content import text_to_html
+from .content import text_to_html, sanitize_html
 
 
 def _inject_link_tracking(html_body: str, tracking_token: str, base_url: str) -> str:
@@ -39,7 +40,9 @@ def _inject_open_pixel(html_body: str, tracking_token: str, base_url: str) -> st
 
 
 def _build_tracked_html(html_body: str, tracking_token: str, base_url: str) -> str:
-    with_links = _inject_link_tracking(html_body, tracking_token, base_url)
+    # Sanitize HTML before adding tracking
+    sanitized = sanitize_html(html_body)
+    with_links = _inject_link_tracking(sanitized, tracking_token, base_url)
     return _inject_open_pixel(with_links, tracking_token, base_url)
 
 
@@ -50,6 +53,7 @@ def update_campaign_unique_open_count(campaign) -> None:
 
 
 def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
+    from django.db import models
     sender = campaign.sender
     if not sender:
         raise ValueError('Select a sender profile before sending.')
@@ -59,34 +63,96 @@ def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
     if not recipients:
         raise ValueError('Add at least one recipient email before sending.')
 
-    smtp_password = sender.get_password()
-    if not smtp_password:
-        raise ValueError('Could not decrypt SMTP password for this sender. Re-save sender credentials.')
-
-    plain_body = campaign.body_text.strip() if campaign.body_text else ''
-    html_body = campaign.body_html.strip() if campaign.body_html else ''
-    if not html_body and plain_body:
-        html_body = text_to_html(plain_body)
-    if not plain_body and html_body:
-        plain_body = 'This email contains HTML content. Please use an HTML-compatible mail client.'
-
-    from_name = (campaign.from_name or sender.display_name or '').strip()
-    from_header = f'{from_name} <{sender.from_email}>' if from_name else sender.from_email
-    reply_to = campaign.reply_to or sender.from_email
+    # Reset daily quota if it's a new day
+    sender.reset_daily_quota_if_needed()
     available_quota = max(sender.daily_limit - sender.emails_sent_today, 0)
     if available_quota == 0:
         raise ValueError('Sender daily limit reached. Increase limit or wait until next reset.')
 
-    target_recipients = recipients[:available_quota]
-    blocked_recipients = max(len(recipients) - len(target_recipients), 0)
+    # Build job list containing content to send to each recipient
+    jobs = [] # list of tuples: (recipient, subject, plain_body, html_body, variant_obj)
+
+    if campaign.is_ab_test:
+        variants = list(campaign.variants.all().order_by('label'))
+        if len(variants) < 2:
+            raise ValueError('A/B test campaigns must have at least 2 variants created.')
+
+        var_a = variants[0]
+        var_b = variants[1]
+
+        if campaign.ab_test_status == 'pending':
+            # Run the A/B test: split target lists into random variants
+            total_count = len(recipients)
+            count_a = max(1, int(total_count * var_a.percentage / 100))
+            count_b = max(1, int(total_count * var_b.percentage / 100))
+
+            random.shuffle(recipients)
+            recips_a = recipients[:count_a]
+            recips_b = recipients[count_a:count_a + count_b]
+
+            for r in recips_a:
+                jobs.append((r, var_a.subject, var_a.body_text, var_a.body_html, var_a))
+            for r in recips_b:
+                jobs.append((r, var_b.subject, var_b.body_text, var_b.body_html, var_b))
+
+            campaign.ab_test_status = 'running'
+            campaign.save(update_fields=['ab_test_status', 'updated_at'])
+
+            # Dispatch background task for winner evaluation
+            try:
+                from apps.campaigns.tasks import evaluate_ab_test_winner
+                evaluate_ab_test_winner.apply_async((campaign.id,), countdown=campaign.ab_test_duration_hours * 3600)
+            except Exception as e:
+                # Celery or Redis might not be running; will fallback to manual evaluation in UI
+                pass
+
+        elif campaign.ab_test_status == 'running':
+            raise ValueError(
+                'A/B test is currently running. Please wait for the test to complete '
+                'or end the test manually in the analytics dashboard to deliver the winner.'
+            )
+
+        elif campaign.ab_test_status == 'completed':
+            winner = campaign.winner_variant or var_a
+            
+            # Exclude already contacted recipients
+            sent_emails = set(campaign.engagements.values_list('recipient_email', flat=True))
+            remaining = [r for r in recipients if r not in sent_emails]
+
+            for r in remaining:
+                jobs.append((r, winner.subject, winner.body_text, winner.body_html, winner))
+    else:
+        # Standard campaign logic
+        plain_body = campaign.body_text.strip() if campaign.body_text else ''
+        html_body = campaign.body_html.strip() if campaign.body_html else ''
+        if not html_body and plain_body:
+            html_body = text_to_html(plain_body)
+        if not plain_body and html_body:
+            plain_body = 'This email contains HTML content. Please use an HTML-compatible mail client.'
+
+        for r in recipients:
+            jobs.append((r, campaign.subject, plain_body, html_body, None))
+
+    # Restrict to available quota
+    jobs = jobs[:available_quota]
+    if not jobs:
+        return 0, 0, "No unsent recipients within quota limits."
+
+    smtp_password = sender.get_password()
+    if not smtp_password:
+        raise ValueError('Could not decrypt SMTP password for this sender. Re-save sender credentials.')
+
+    from_name = (campaign.from_name or sender.display_name or '').strip()
+    from_header = f'{from_name} <{sender.from_email}>' if from_name else sender.from_email
+    reply_to = campaign.reply_to or sender.from_email
 
     sent_count = 0
-    failed_count = blocked_recipients
+    failed_count = len(recipients) - len(jobs)
     last_error = None
 
-    for recipient in target_recipients:
+    for recipient, subject, p_body, h_body, variant_obj in jobs:
         tracking_token = uuid4().hex
-        tracked_html_body = _build_tracked_html(html_body, tracking_token, base_url)
+        tracked_html_body = _build_tracked_html(h_body, tracking_token, base_url)
         try:
             if sender.smtp_port == 465:
                 smtp_client = smtplib.SMTP_SSL(sender.smtp_host, sender.smtp_port, timeout=20)
@@ -99,8 +165,8 @@ def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
                 server.login(sender.username, smtp_password)
 
                 message = EmailMultiAlternatives(
-                    subject=campaign.subject,
-                    body=plain_body,
+                    subject=subject,
+                    body=p_body,
                     from_email=from_header,
                     to=[recipient],
                     reply_to=[reply_to] if reply_to else None,
@@ -109,11 +175,18 @@ def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
                     message.attach_alternative(tracked_html_body, 'text/html')
                 server.sendmail(from_header, [recipient], message.message().as_string())
                 sent_count += 1
+                
                 EmailEngagement.objects.create(
                     campaign=campaign,
+                    campaign_variant=variant_obj,
                     recipient_email=recipient,
                     tracking_token=tracking_token,
                 )
+
+                if variant_obj:
+                    variant_obj.sent_count = models.F('sent_count') + 1
+                    variant_obj.save(update_fields=['sent_count'])
+
         except smtplib.SMTPAuthenticationError:
             raise ValueError(
                 "Gmail authentication failed. You must use an App Password, not your regular "
@@ -122,10 +195,6 @@ def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
         except smtplib.SMTPRecipientsRefused as exc:
             failed_count += 1
             last_error = f"Recipient refused: {exc}"
-        except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, smtplib.SMTPHeloError, smtplib.SMTPDataError, smtplib.SMTPException, OSError) as exc:
-            failed_count += 1
-            last_error = str(exc)
-            continue
         except Exception as exc:
             failed_count += 1
             last_error = str(exc)
@@ -136,6 +205,7 @@ def send_campaign_with_smtp(campaign, base_url: str, recipients_override=None):
     sender.save(update_fields=['emails_sent_today', 'last_reset_date'])
 
     return sent_count, failed_count, last_error
+
 
 
 def send_test_email_with_smtp(campaign, test_email: str):
@@ -165,6 +235,8 @@ def send_test_email_with_smtp(campaign, test_email: str):
     from_header = f'{from_name} <{sender.from_email}>' if from_name else sender.from_email
     reply_to = campaign.reply_to or sender.from_email
 
+    # Reset daily quota if it's a new day
+    sender.reset_daily_quota_if_needed()
     available_quota = max(sender.daily_limit - sender.emails_sent_today, 0)
     if available_quota == 0:
         raise ValueError('Sender daily limit reached. Increase limit or wait until next reset.')

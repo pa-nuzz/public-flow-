@@ -1,3 +1,2 @@
-from django.db import models
-from django.conf import settings
-
+# Dashboard app uses models from other apps (Campaigns, Contacts, etc.)
+# No local models defined - kept for future dashboard-specific features

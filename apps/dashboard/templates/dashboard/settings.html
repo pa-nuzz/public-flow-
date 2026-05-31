@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="page-shell max-w-none">
-  {% load widget_tweaks %}
+  {% load widget_tweaks dashboard_tags %}
 
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
@@ -134,6 +134,15 @@
                 >
                   <span class="sender-test-label">Test Connection</span>
                 </button>
+                <button
+                  type="button"
+                  class="sender-dns-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:border-amber-400/40 hover:text-amber-700 transition-colors"
+                  data-domain="{{ s.from_email|cut:'https://'|cut:'http://'|split:'@'|last }}"
+                  data-smtp-host="{{ s.smtp_host }}"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                  Audit DNS
+                </button>
                 {% if s.is_active %}
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -176,6 +185,8 @@
                 <div class="h-1.5 rounded-full {% if usage_pct > 90 %}bg-red-500{% elif usage_pct >= 70 %}bg-amber-500{% else %}bg-emerald-500{% endif %}" style="width: {{ usage_pct }}%;"></div>
               </div>
             </div>
+
+            <div class="dns-audit-result hidden mt-3 space-y-2" data-sender-id="{{ s.id }}"></div>
           </div>
           {% endfor %}
         </div>
@@ -196,6 +207,79 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const testButtons = document.querySelectorAll('.sender-test-btn');
+    const dnsButtons = document.querySelectorAll('.sender-dns-btn');
+
+    // ── DNS Audit ──────────────────────────────────────────────
+    dnsButtons.forEach(function (button) {
+      button.addEventListener('click', async function () {
+        const domain = button.dataset.domain;
+        const smtpHost = button.dataset.smtpHost || '';
+        const card = button.closest('.rounded-2xl.border');
+        const resultContainer = card ? card.querySelector('.dns-audit-result') : null;
+        if (!domain || !resultContainer) return;
+
+        const label = button.querySelector('svg');
+        button.disabled = true;
+        button.classList.add('opacity-60', 'cursor-not-allowed');
+        label.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 00-9-9"/></svg>';
+
+        try {
+          const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+          const resp = await fetch("{% url 'senders:audit_dns' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            body: JSON.stringify({domain: domain, smtp_host: smtpHost || null})
+          });
+          const data = await resp.json();
+
+          resultContainer.classList.remove('hidden');
+          resultContainer.innerHTML = '';
+
+          if (data.success && data.checks) {
+            data.checks.forEach(function (check) {
+              const statusIcon = check.status === 'pass' ? '✓' : check.status === 'warning' ? '⚠' : '✗';
+              const statusClass = check.status === 'pass' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                                  check.status === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                                  'bg-red-50 border-red-200 text-red-700';
+              const iconClass = check.status === 'pass' ? 'text-emerald-500' :
+                                check.status === 'warning' ? 'text-amber-500' :
+                                'text-red-500';
+              resultContainer.innerHTML +=
+                '<div class="audit-item p-3 rounded-xl border ' + statusClass + '">' +
+                  '<div class="flex items-start gap-3 w-full">' +
+                    '<span class="text-sm font-bold ' + iconClass + '">' + statusIcon + '</span>' +
+                    '<div class="flex-1 min-w-0">' +
+                      '<p class="text-xs font-bold">' + check.check + '</p>' +
+                      '<p class="text-[11px] mt-0.5 opacity-75">' + (check.value || '—') + '</p>' +
+                      '<p class="text-[10px] mt-1 opacity-60">' + check.advice + '</p>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>';
+            });
+
+            const scoreColor = data.score >= 80 ? 'text-emerald-600' : data.score >= 50 ? 'text-amber-600' : 'text-red-600';
+            resultContainer.innerHTML +=
+              '<div class="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">' +
+                '<span class="text-xs font-bold text-slate-600">Health Score</span>' +
+                '<span class="text-sm font-black ' + scoreColor + '">' + data.score + '/100</span>' +
+              '</div>';
+          } else {
+            resultContainer.innerHTML = '<p class="text-xs text-red-600">DNS audit failed. Try again.</p>';
+          }
+        } catch (e) {
+          if (resultContainer) {
+            resultContainer.classList.remove('hidden');
+            resultContainer.innerHTML = '<p class="text-xs text-red-600">Network error: ' + (e.message || 'unknown') + '</p>';
+          }
+        } finally {
+          button.disabled = false;
+          button.classList.remove('opacity-60', 'cursor-not-allowed');
+          label.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> Audit DNS';
+        }
+      });
+    });
+
+    // ── SMTP Test Connection ────────────────────────────────────
     if (!testButtons.length) return;
 
     const getCookie = function (name) {

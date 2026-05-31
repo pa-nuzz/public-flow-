@@ -12,3 +12,8 @@ def greeting(context):
     if hour < 18:
         return "Good afternoon"
     return "Good evening"
+
+
+@register.filter
+def split(value, delimiter):
+    return value.split(delimiter)

@@ -47,7 +47,7 @@
           </button>
         </div>
         <div class="mt-2 text-right">
-          <a href="{% url 'accounts:password_reset' %}" class="text-sm font-semibold text-primary hover:text-primary-hover">Forgot password?</a>
+          <a href="{% url 'accounts:password_reset_choice' %}" class="text-sm font-semibold text-primary hover:text-primary-hover">Forgot password?</a>
         </div>
         {% if form.password.errors %}<p class="mt-2 text-sm text-red-600 font-medium">{{ form.password.errors.0 }}</p>{% endif %}
       </div>

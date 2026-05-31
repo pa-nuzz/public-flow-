@@ -1,0 +1,30 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Automation Analytics — Mailexa AI{% endblock %}
+{% block page_title %}Automation Analytics{% endblock %}
+
+{% block content %}
+<div class="page-shell max-w-none space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">{{ workflow.name }}</h1>
+      <p class="text-sm text-slate-500 mt-1">Workflow enrollment and performance analytics</p>
+    </div>
+    <a href="{% url 'automations:workflow_edit' workflow.id %}" class="campaign-cta-secondary">Edit Workflow</a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="premium-surface card-elevate rounded-2xl p-5">
+      <p class="text-xs text-gray-500">Total Enrollments</p>
+      <p class="text-2xl font-bold text-slate-900">{{ total_count }}</p>
+    </div>
+    <div class="premium-surface card-elevate rounded-2xl p-5">
+      <p class="text-xs text-gray-500">Active</p>
+      <p class="text-2xl font-bold text-emerald-600">{{ active_count }}</p>
+    </div>
+    <div class="premium-surface card-elevate rounded-2xl p-5">
+      <p class="text-xs text-gray-500">Completed</p>
+      <p class="text-2xl font-bold text-indigo-600">{{ completed_count }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

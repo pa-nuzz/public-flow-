@@ -1,0 +1,273 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}{% if workflow %}Edit{% else %}Create{% endif %} Automation — Mailexa AI{% endblock %}
+{% block page_title %}{% if workflow %}Edit{% else %}Create{% endif %} Automation{% endblock %}
+
+{% block content %}
+<div class="page-shell max-w-none space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">{% if workflow %}Edit{% else %}Create{% endif %} Automation</h1>
+      <p class="text-sm text-slate-500 mt-1">Build a visual drip sequence for your contacts</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'automations:workflow_list' %}" class="campaign-cta-secondary">← Back</a>
+      {% if workflow %}
+      <a href="{% url 'automations:workflow_analytics' workflow.id %}" class="campaign-cta-secondary">Analytics</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not workflow %}
+  <!-- Step 1: Name the workflow -->
+  <div class="premium-surface card-elevate rounded-2xl p-6 max-w-lg">
+    <form method="post">
+      {% csrf_token %}
+      <label class="block text-sm font-bold text-slate-700 mb-2">Workflow Name</label>
+      <input type="text" name="name" class="auth-input mb-4" placeholder="e.g., Welcome Drip Series" required>
+      <button type="submit" class="btn-primary w-full justify-center">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Create & Build Flow
+      </button>
+    </form>
+  </div>
+  {% else %}
+  <!-- Step 2: Visual Flow Builder -->
+  <div class="premium-surface card-elevate rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">{{ workflow.name }}</h2>
+        <p class="text-xs text-slate-500">Drag and drop to build your automation sequence</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-semibold text-slate-500">{% if workflow.is_active %}🟢 Active{% else %}⏸ Paused{% endif %}</span>
+        <button type="button" onclick="saveWorkflow()" class="btn-primary px-5 py-2.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          Save Flow
+        </button>
+      </div>
+    </div>
+
+    <div class="flow-builder-container" id="flow-builder">
+      <div class="flex items-center gap-2 mb-6">
+        <button type="button" onclick="addNode('trigger')" class="px-4 py-2 rounded-lg border-2 border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-bold hover:bg-indigo-100 transition-all">
+          + Trigger
+        </button>
+        <button type="button" onclick="addNode('delay')" class="px-4 py-2 rounded-lg border-2 border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-all">
+          + Delay
+        </button>
+        <button type="button" onclick="addNode('action')" class="px-4 py-2 rounded-lg border-2 border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all">
+          + Action
+        </button>
+      </div>
+
+      <div id="flow-nodes" class="flex flex-col items-center gap-0 w-full"></div>
+
+      <div id="flow-empty" class="py-16 text-center">
+        <p class="text-sm text-slate-400">Click a button above to start building your flow.</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if workflow %}
+<script>
+  const WORKFLOW_ID = {{ workflow.id }};
+  let nodes = [];
+  let edges = [];
+  let nodeCounter = 0;
+
+  const NODE_TYPES = {
+    trigger: { label: 'Trigger', icon: '⚡', color: 'indigo', border: 'flow-node-trigger' },
+    delay: { label: 'Delay', icon: '⏱', color: 'amber', border: 'flow-node-delay' },
+    action: { label: 'Action', icon: '▶', color: 'emerald', border: 'flow-node-action' },
+  };
+
+  function addNode(type) {
+    const nodeId = 'node_' + (++nodeCounter);
+    const config = {};
+
+    if (type === 'trigger') {
+      config.event = 'list_signup';
+      config.list_id = '';
+    } else if (type === 'delay') {
+      config.hours = 24;
+    } else if (type === 'action') {
+      config.action = 'send_email';
+      config.template_id = '';
+    }
+
+    nodes.push({ node_id: nodeId, type: type, config: config });
+    if (nodes.length > 1) {
+      const prev = nodes[nodes.length - 2];
+      edges.push({ from_node_id: prev.node_id, to_node_id: nodeId, condition: 'default' });
+    }
+    renderFlow();
+  }
+
+  function renderFlow() {
+    const container = document.getElementById('flow-nodes');
+    const empty = document.getElementById('flow-empty');
+    if (!container) return;
+
+    if (nodes.length === 0) {
+      container.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    let html = '';
+    nodes.forEach(function (node, idx) {
+      const nt = NODE_TYPES[node.type] || NODE_TYPES.action;
+      const borderClass = nt.border;
+
+      html += '<div class="flow-node-card ' + borderClass + ' mb-0" data-node-id="' + node.node_id + '">';
+      html += '<div class="flow-node-header">';
+      html += '<div class="flow-node-icon">' + nt.icon + '</div>';
+      html += '<div class="flex-1 min-w-0">';
+      html += '<p class="text-sm font-bold text-slate-800">' + nt.label + '</p>';
+      html += '<p class="text-xs text-slate-500">' + getNodeSummary(node) + '</p>';
+      html += '</div>';
+      html += '<button type="button" onclick="removeNode(\'' + node.node_id + '\')" class="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">';
+      html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+      html += '</button>';
+      html += '</div>';
+      html += '<div class="mt-2 pt-2 border-t border-slate-100">';
+      html += getNodeConfigEditor(node);
+      html += '</div>';
+      html += '</div>';
+
+      // Connector line between nodes
+      if (idx < nodes.length - 1) {
+        html += '<div class="flow-connector-line relative">';
+        html += '<button type="button" onclick="addNodeAfter(' + idx + ')" class="flow-add-btn" title="Add node here">';
+        html += '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>';
+        html += '</button>';
+        html += '</div>';
+      }
+    });
+
+    container.innerHTML = html;
+  }
+
+  function getNodeSummary(node) {
+    if (node.type === 'trigger') {
+      const events = { list_signup: 'List Signup', tag_added: 'Tag Added' };
+      return events[node.config.event] || node.config.event || 'List Signup';
+    }
+    if (node.type === 'delay') {
+      return 'Wait ' + (node.config.hours || 24) + ' hour(s)';
+    }
+    if (node.type === 'action') {
+      const actions = { send_email: 'Send Email', add_tag: 'Add Tag', remove_tag: 'Remove Tag' };
+      return actions[node.config.action] || node.config.action || 'Send Email';
+    }
+    return '';
+  }
+
+  function getNodeConfigEditor(node) {
+    if (node.type === 'trigger') {
+      return '<div class="flex items-center gap-2">' +
+        '<select onchange="updateNodeConfig(\'' + node.node_id + '\',\'event\',this.value)" class="auth-input text-xs">' +
+        '<option value="list_signup"' + (node.config.event === 'list_signup' ? ' selected' : '') + '>List Signup</option>' +
+        '<option value="tag_added"' + (node.config.event === 'tag_added' ? ' selected' : '') + '>Tag Added</option>' +
+        '</select></div>';
+    }
+    if (node.type === 'delay') {
+      return '<div class="flex items-center gap-2">' +
+        '<span class="text-xs text-slate-600">Wait</span>' +
+        '<input type="number" min="1" max="720" value="' + (node.config.hours || 24) + '" onchange="updateNodeConfig(\'' + node.node_id + '\',\'hours\',parseInt(this.value)||24)" class="auth-input text-xs w-20" />' +
+        '<span class="text-xs text-slate-600">hour(s)</span></div>';
+    }
+    if (node.type === 'action') {
+      let actionHtml = '<div class="space-y-2">' +
+        '<select onchange="updateNodeConfig(\'' + node.node_id + '\',\'action\',this.value);renderFlow()" class="auth-input text-xs">' +
+        '<option value="send_email"' + (node.config.action === 'send_email' ? ' selected' : '') + '>Send Email</option>' +
+        '<option value="add_tag"' + (node.config.action === 'add_tag' ? ' selected' : '') + '>Add Tag</option>' +
+        '<option value="remove_tag"' + (node.config.action === 'remove_tag' ? ' selected' : '') + '>Remove Tag</option>' +
+        '</select>';
+      if (node.config.action === 'send_email') {
+        actionHtml += '<select onchange="updateNodeConfig(\'' + node.node_id + '\',\'template_id\',this.value)" class="auth-input text-xs">' +
+          '<option value="">Select template</option>' +
+          '{% for t in templates %}<option value="{{ t.id }}"' + (node.config.template_id === '{{ t.id }}' ? ' selected' : '') + '>{{ t.name }}</option>{% endfor %}' +
+          '</select>';
+      } else {
+        actionHtml += '<input type="text" value="' + ((node.config.tags || []).join(', ')) + '" onchange="updateNodeConfig(\'' + node.node_id + '\',\'tags\',this.value.split(\',\').map(function(t){return t.trim()}).filter(Boolean))" class="auth-input text-xs" placeholder="tag1, tag2" />';
+      }
+      actionHtml += '</div>';
+      return actionHtml;
+    }
+    return '';
+  }
+
+  function updateNodeConfig(nodeId, key, value) {
+    var found = false;
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].node_id === nodeId) {
+        nodes[i].config[key] = value;
+        found = true;
+        break;
+      }
+    }
+    if (!found) return;
+    // Re-render only the summary
+    var card = document.querySelector('.flow-node-card[data-node-id="' + nodeId + '"]');
+    if (card) {
+      var summaryP = card.querySelector('.flow-node-header .flex-1 p:last-child');
+      if (summaryP) summaryP.textContent = getNodeSummary(nodes.find(function(n){return n.node_id === nodeId;}));
+    }
+  }
+
+  function removeNode(nodeId) {
+    nodes = nodes.filter(function (n) { return n.node_id !== nodeId; });
+    edges = edges.filter(function (e) { return e.from_node_id !== nodeId && e.to_node_id !== nodeId; });
+    renderFlow();
+  }
+
+  function addNodeAfter(idx) {
+    const prevNode = nodes[idx];
+    const nodeId = 'node_' + (++nodeCounter);
+    nodes.splice(idx + 1, 0, { node_id: nodeId, type: 'action', config: { action: 'send_email', template_id: '' } });
+    edges = edges.filter(function (e) { return e.from_node_id !== prevNode.node_id; });
+    edges.push({ from_node_id: prevNode.node_id, to_node_id: nodeId, condition: 'default' });
+    if (idx + 2 < nodes.length) {
+      edges.push({ from_node_id: nodeId, to_node_id: nodes[idx + 2].node_id, condition: 'default' });
+    }
+    renderFlow();
+  }
+
+  function saveWorkflow() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 00-9-9"/></svg> Saving...';
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    fetch('{% url "automations:api_save_nodes" %}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+      body: JSON.stringify({ workflow_id: WORKFLOW_ID, nodes: nodes, edges: edges })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.success) {
+        var toast = document.createElement('div');
+        toast.className = 'fixed top-24 right-10 z-[60] toast-msg animate-toast-in px-5 py-4 rounded-2xl shadow-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-3';
+        toast.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span class="font-semibold">Flow saved successfully!</span>';
+        document.body.appendChild(toast);
+        setTimeout(function () { toast.classList.add('animate-toast-out'); setTimeout(function () { toast.remove(); }, 400); }, 2500);
+      } else {
+        alert('Save failed: ' + (data.error || 'unknown error'));
+      }
+    })
+    .catch(function (err) {
+      alert('Network error: ' + (err.message || 'unknown'));
+    })
+    .finally(function () {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg> Save Flow';
+    });
+  }
+</script>
+{% endif %}
+{% endblock %}

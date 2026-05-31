@@ -1,8 +1,15 @@
 import os
 import sys
+import base64
+import hashlib
 from pathlib import Path
 from urllib.parse import urlparse
 from decouple import config
+from dotenv import load_dotenv
+from cryptography.fernet import Fernet
+
+# Load environment variables from .env file
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,9 +28,11 @@ CSRF_TRUSTED_ORIGINS = [x.strip() for x in CSRF_TRUSTED_ORIGINS if x.strip()]
 if DEBUG:
     CSRF_TRUSTED_ORIGINS += [
         'https://*.ngrok-free.app',
-        'https://*.ngrok.io'
+        'https://*.ngrok.io',
+        'http://127.0.0.1:51239',  # Browser preview proxy
+        'http://localhost:51239',
     ]
-    ALLOWED_HOSTS += ['*.ngrok-free.app', '*.ngrok.io']
+    ALLOWED_HOSTS += ['*.ngrok-free.app', '*.ngrok.io', '127.0.0.1', 'localhost']
 NGROK_DOMAIN = config('NGROK_DOMAIN', default='').strip()
 PUBLIC_BASE_URL = config('PUBLIC_BASE_URL', default='http://127.0.0.1:8000').strip().rstrip('/')
 
@@ -137,6 +146,7 @@ INSTALLED_APPS = [
     'apps.intelligence',
     'apps.dashboard',
     'apps.contacts',
+    'apps.automations',
 ]
 
 MIDDLEWARE = [
@@ -288,31 +298,10 @@ LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
 # SMTP Encryption Key
-SMTP_ENCRYPTION_KEY = config('SMTP_ENCRYPTION_KEY', default='')
-ENCRYPTION_KEY = config('ENCRYPTION_KEY', default='')
+SMTP_ENCRYPTION_KEY = config('SMTP_ENCRYPTION_KEY', default=os.environ.get('ENCRYPTION_KEY', ''))
+ENCRYPTION_KEY = config('ENCRYPTION_KEY', default=os.environ.get('ENCRYPTION_KEY', ''))
 
-# Optional: Add validation to ensure key exists in production
-if not ENCRYPTION_KEY and not DEBUG:
-    raise ValueError("ENCRYPTION_KEY must be set in production environment")
-
-# Machine Learning
-ML_MODEL_PATH = Path(config('ML_MODEL_PATH', default=str(BASE_DIR / 'models_ml' / 'spam_model.pkl')))
-ML_VECTORIZER_PATH = Path(config('ML_VECTORIZER_PATH', default=str(BASE_DIR / 'models_ml' / 'tfidf_vectorizer.pkl')))
-
-# Silencing django-ratelimit strict cache checks for development
-SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
-
-import base64
-import hashlib
-from dotenv import load_dotenv
-from cryptography.fernet import Fernet
-
-load_dotenv()
-
-# Encryption Key
-if not ENCRYPTION_KEY:
-    ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', '')
-
+# Generate deterministic development key if not set
 if not ENCRYPTION_KEY:
     if DEBUG:
         # Deterministic development key so encrypted sender passwords survive restarts
@@ -323,3 +312,9 @@ if not ENCRYPTION_KEY:
 # Clean the key
 ENCRYPTION_KEY = ENCRYPTION_KEY.strip()
 
+# Machine Learning
+ML_MODEL_PATH = Path(config('ML_MODEL_PATH', default=str(BASE_DIR / 'models_ml' / 'spam_model.pkl')))
+ML_VECTORIZER_PATH = Path(config('ML_VECTORIZER_PATH', default=str(BASE_DIR / 'models_ml' / 'tfidf_vectorizer.pkl')))
+
+# Silencing django-ratelimit strict cache checks for development
+SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']

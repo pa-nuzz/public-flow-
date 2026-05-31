@@ -14,4 +14,8 @@ app.conf.beat_schedule = {
 		'task': 'apps.campaigns.tasks.run_scheduled_campaigns_task',
 		'schedule': crontab(minute='*'),
 	},
+	'process-workflows-every-5-minutes': {
+		'task': 'apps.automations.tasks.process_workflows_task',
+		'schedule': crontab(minute='*/5'),
+	},
 }

@@ -112,14 +112,23 @@ class Sender(models.Model):
         logger.error("Password decryption error for sender '%s'", self.display_name)
         return None
 
-    @property
-    def is_limit_reached(self):
+    def reset_daily_quota_if_needed(self):
+        """Reset daily email count if it's a new day. Call before checking limit."""
         from django.utils import timezone
         today = timezone.now().date()
         if self.last_reset_date != today:
             self.emails_sent_today = 0
             self.last_reset_date = today
             self.save(update_fields=['emails_sent_today', 'last_reset_date'])
+
+    @property
+    def is_limit_reached(self):
+        """Check if daily email limit is reached. Does NOT modify database."""
+        from django.utils import timezone
+        today = timezone.now().date()
+        if self.last_reset_date != today:
+            # Return projected status without side effects
+            return 0 >= self.daily_limit
         return self.emails_sent_today >= self.daily_limit
 
     class Meta:

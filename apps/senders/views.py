@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 import smtplib, ssl, json
+import logging
 
-# Create your views here.
+logger = logging.getLogger(__name__)
+
 
 @login_required
 @require_POST
@@ -71,3 +73,61 @@ def verify_sender(request):
         return JsonResponse({'success': False, 'error': 'SMTP connection timed out.'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_POST
+def audit_sender_dns_view(request):
+    """
+    Run a live DNS reputation audit for a sender's domain.
+    Accepts JSON with 'domain' and optional 'smtp_host'.
+    Returns structured check results and an overall health score.
+    """
+    try:
+        data = json.loads(request.body)
+        domain = str(data.get('domain', '')).strip().lower()
+        smtp_host = str(data.get('smtp_host', '')).strip() or None
+
+        if not domain:
+            return JsonResponse({'success': False, 'error': 'Domain is required.'}, status=400)
+
+        # Remove protocol/path if accidentally included
+        domain = domain.replace('https://', '').replace('http://', '').split('/')[0]
+
+        from .services.dns_audit import audit_sender_dns
+        result = audit_sender_dns(domain=domain, smtp_host=smtp_host)
+
+        return JsonResponse({'success': True, **result})
+
+    except Exception as exc:
+        logger.error(f"DNS audit error: {exc}")
+        return JsonResponse({'success': False, 'error': 'DNS audit failed. Please try again.'}, status=500)
+
+
+@login_required
+@require_POST
+def set_ab_winner(request):
+    """
+    Manually set the winner of an A/B test campaign.
+    Accepts JSON with 'campaign_id' and 'variant_id'.
+    """
+    from apps.campaigns.models import Campaign, CampaignVariant
+
+    try:
+        data = json.loads(request.body)
+        campaign_id = int(data.get('campaign_id', 0))
+        variant_id = int(data.get('variant_id', 0))
+
+        campaign = Campaign.objects.get(pk=campaign_id, user=request.user)
+        variant = CampaignVariant.objects.get(pk=variant_id, campaign=campaign)
+
+        campaign.winner_variant = variant
+        campaign.ab_test_status = 'completed'
+        campaign.save(update_fields=['winner_variant', 'ab_test_status', 'updated_at'])
+
+        return JsonResponse({'success': True, 'message': f'Variant {variant.label} set as winner.'})
+    except (Campaign.DoesNotExist, CampaignVariant.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Campaign or variant not found.'}, status=404)
+    except Exception as exc:
+        logger.error(f"set_ab_winner error: {exc}")
+        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
